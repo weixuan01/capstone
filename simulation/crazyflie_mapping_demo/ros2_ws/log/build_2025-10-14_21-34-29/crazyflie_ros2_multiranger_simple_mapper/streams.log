@@ -1,0 +1,37 @@
+[0.670s] Invoking command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_simple_mapper': PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/crazyflie_ros2_multiranger_simple_mapper build --build-base /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build install --record /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/install.log --single-version-externally-managed install_data
+[0.805s] running egg_info
+[0.805s] creating ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info
+[0.805s] writing ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/PKG-INFO
+[0.805s] writing dependency_links to ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/dependency_links.txt
+[0.805s] writing entry points to ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/entry_points.txt
+[0.806s] writing requirements to ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/requires.txt
+[0.806s] writing top-level names to ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/top_level.txt
+[0.806s] writing manifest file '../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/SOURCES.txt'
+[0.807s] reading manifest file '../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/SOURCES.txt'
+[0.807s] writing manifest file '../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info/SOURCES.txt'
+[0.807s] running build
+[0.807s] running build_py
+[0.807s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build
+[0.808s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build/lib
+[0.808s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build/lib/crazyflie_ros2_multiranger_simple_mapper
+[0.808s] copying crazyflie_ros2_multiranger_simple_mapper/__init__.py -> /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build/lib/crazyflie_ros2_multiranger_simple_mapper
+[0.808s] copying crazyflie_ros2_multiranger_simple_mapper/simple_mapper_multiranger.py -> /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build/lib/crazyflie_ros2_multiranger_simple_mapper
+[0.808s] running install
+[0.808s] running install_lib
+[0.808s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages/crazyflie_ros2_multiranger_simple_mapper
+[0.808s] copying /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build/lib/crazyflie_ros2_multiranger_simple_mapper/__init__.py -> /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages/crazyflie_ros2_multiranger_simple_mapper
+[0.808s] copying /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build/lib/crazyflie_ros2_multiranger_simple_mapper/simple_mapper_multiranger.py -> /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages/crazyflie_ros2_multiranger_simple_mapper
+[0.809s] byte-compiling /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages/crazyflie_ros2_multiranger_simple_mapper/__init__.py to __init__.cpython-310.pyc
+[0.809s] byte-compiling /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages/crazyflie_ros2_multiranger_simple_mapper/simple_mapper_multiranger.py to simple_mapper_multiranger.cpython-310.pyc
+[0.810s] running install_data
+[0.810s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/share/ament_index
+[0.810s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/share/ament_index/resource_index
+[0.810s] creating /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/share/ament_index/resource_index/packages
+[0.810s] copying resource/crazyflie_ros2_multiranger_simple_mapper -> /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/share/ament_index/resource_index/packages
+[0.810s] copying package.xml -> /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/share/crazyflie_ros2_multiranger_simple_mapper
+[0.810s] running install_egg_info
+[0.811s] Copying ../../../build/crazyflie_ros2_multiranger_simple_mapper/crazyflie_ros2_multiranger_simple_mapper.egg-info to /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages/crazyflie_ros2_multiranger_simple_mapper-0.0.0-py3.10.egg-info
+[0.812s] running install_scripts
+[0.826s] Installing simple_mapper_multiranger script to /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/crazyflie_ros2_multiranger_simple_mapper
+[0.826s] writing list of installed files to '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/install.log'
+[0.847s] Invoked command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_simple_mapper' returned '0': PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_ros2_multiranger_simple_mapper/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../../build/crazyflie_ros2_multiranger_simple_mapper build --build-base /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/build install --record /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_simple_mapper/install.log --single-version-externally-managed install_data

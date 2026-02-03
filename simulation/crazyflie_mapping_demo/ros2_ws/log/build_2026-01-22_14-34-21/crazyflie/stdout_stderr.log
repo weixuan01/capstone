@@ -1,0 +1,110 @@
+[  5%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/CrazyradioThread.cpp.o[0m
+[  5%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/CrazyflieUSBThread.cpp.o[0m
+[  7%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/USBManager.cpp.o[0m
+[ 10%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/USBDevice.cpp.o[0m
+[ 12%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/Connection.cpp.o[0m
+[ 15%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/Crazyradio.cpp.o[0m
+[ 17%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/CrazyflieUSB.cpp.o[0m
+[ 20%] [32mBuilding CXX object CMakeFiles/teleop.dir/src/teleop.cpp.o[0m
+[ 22%] [32m[1mLinking CXX static library libcrazyflieLinkCpp.a[0m
+[ 25%] Built target crazyflieLinkCpp
+[ 27%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/src/Crazyflie.cpp.o[0m
+[ 30%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/src/crtp.cpp.o[0m
+[ 32%] [32m[1mLinking CXX static library libcrazyflie_cpp.a[0m
+[ 32%] Built target crazyflie_cpp
+[ 35%] [32mBuilding CXX object CMakeFiles/crazyflie_server.dir/src/crazyflie_server.cpp.o[0m
+[ 50%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/log.dir/src/log.cpp.o[0m
+[ 50%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/battery.dir/src/battery.cpp.o[0m
+[ 50%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/console.dir/src/console.cpp.o[0m
+[ 52%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/scan.dir/src/scan.cpp.o[0m
+[ 50%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/reboot.dir/src/reboot.cpp.o[0m
+[ 55%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/listParams.dir/src/listParams.cpp.o[0m
+[ 50%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/version.dir/src/version.cpp.o[0m
+[ 50%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/listMemories.dir/src/listMemories.cpp.o[0m
+[ 57%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/src/listLogVariables.cpp.o[0m
+[ 60%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/comCheck.dir/src/comCheck.cpp.o[0m
+[ 62%] [32m[1mLinking CXX executable listLogVariables[0m
+[ 65%] [32m[1mLinking CXX executable listParams[0m
+[ 67%] [32m[1mLinking CXX executable scan[0m
+[ 70%] [32m[1mLinking CXX executable version[0m
+[ 72%] [32m[1mLinking CXX executable console[0m
+[ 75%] [32m[1mLinking CXX executable listMemories[0m
+[ 77%] [32m[1mLinking CXX executable comCheck[0m
+[ 80%] [32m[1mLinking CXX executable reboot[0m
+[ 82%] [32m[1mLinking CXX executable battery[0m
+[ 82%] Built target listLogVariables
+[ 85%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o[0m
+[ 85%] Built target listParams
+[ 85%] Built target scan
+[ 87%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/setParam.dir/src/setParam.cpp.o[0m
+[ 87%] Built target version
+[ 87%] Built target console
+[ 87%] Built target listMemories
+[ 90%] [32m[1mLinking CXX executable log[0m
+[ 90%] Built target comCheck
+[ 90%] Built target battery
+[ 90%] Built target reboot
+[ 90%] Built target log
+[ 92%] [32m[1mLinking CXX executable setParam[0m
+[ 95%] [32m[1mLinking CXX executable downloadUSDLogfile[0m
+[ 95%] Built target setParam
+[ 95%] Built target downloadUSDLogfile
+[ 97%] [32m[1mLinking CXX executable teleop[0m
+[ 97%] Built target teleop
+[100%] [32m[1mLinking CXX executable crazyflie_server[0m
+[100%] Built target crazyflie_server
+-- Install configuration: ""
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/comCheck
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/scan
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/listParams
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/listLogVariables
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/listMemories
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/reboot
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/battery
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/version
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/console
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/log
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/setParam
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/downloadUSDLogfile
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/teleop
+-- Set runtime path of "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/teleop" to ""
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/crazyflie_server
+-- Set runtime path of "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/crazyflie_server" to ""
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/crazyflie_server.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/chooser.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/vel_mux.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/cfmult.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/simple_mapper_multiranger.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/aideck_streamer.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/gui.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/flash.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch/launch.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch/teleop_launch.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch/launch_teleop2.py
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/config.rviz
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/teleop.yaml
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/server.yaml
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/crazyflies.yaml
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/motion_capture.yaml
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/aideck_streamer.yaml
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf/cf2_assembly.stl
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf/crazyflie_description.urdf
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf/cf2_assembly_with_props.dae
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/ament_index/resource_index/package_run_dependencies/crazyflie
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/ament_index/resource_index/parent_prefix_path/crazyflie
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/ament_prefix_path.sh
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/path.sh
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/path.dsv
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.bash
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.sh
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.zsh
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.dsv
+-- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/package.dsv
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/ament_index/resource_index/packages/crazyflie
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/cmake/crazyflieConfig.cmake
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/cmake/crazyflieConfig-version.cmake
+-- Up-to-date: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/package.xml

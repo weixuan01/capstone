@@ -1,0 +1,3 @@
+[console_scripts]
+wall_following_multiranger = crazyflie_ros2_multiranger_wall_following.wall_following_multiranger:main
+

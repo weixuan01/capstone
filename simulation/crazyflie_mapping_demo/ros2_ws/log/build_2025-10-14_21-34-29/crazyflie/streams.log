@@ -1,0 +1,160 @@
+[0.138s] Invoking command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie': AMENT_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:/opt/ros/humble LD_LIBRARY_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie
+[0.183s] -- The C compiler identification is GNU 11.4.0
+[0.227s] -- The CXX compiler identification is GNU 11.4.0
+[0.233s] -- Detecting C compiler ABI info
+[0.286s] -- Detecting C compiler ABI info - done
+[0.291s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.291s] -- Detecting C compile features
+[0.291s] -- Detecting C compile features - done
+[0.293s] -- Detecting CXX compiler ABI info
+[0.351s] -- Detecting CXX compiler ABI info - done
+[0.358s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.358s] -- Detecting CXX compile features
+[0.359s] -- Detecting CXX compile features - done
+[0.361s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.472s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.545s] -- Found rclcpp: 16.0.15 (/opt/ros/humble/share/rclcpp/cmake)
+[0.568s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.570s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.575s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.582s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.591s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.615s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.616s] -- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.674s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[0.694s] -- Found FastRTPS: /opt/ros/humble/include  
+[0.726s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.730s] -- Looking for pthread.h
+[0.790s] -- Looking for pthread.h - found
+[0.790s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[0.848s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[0.849s] -- Found Threads: TRUE  
+[0.879s] -- Found tf2_ros: 0.25.16 (/opt/ros/humble/share/tf2_ros/cmake)
+[0.944s] -- Found rclpy: 3.3.17 (/opt/ros/humble/share/rclpy/cmake)
+[0.945s] -- Found std_srvs: 4.9.0 (/opt/ros/humble/share/std_srvs/cmake)
+[0.951s] -- Found nav_msgs: 4.9.0 (/opt/ros/humble/share/nav_msgs/cmake)
+[0.961s] -- Found sensor_msgs: 4.9.0 (/opt/ros/humble/share/sensor_msgs/cmake)
+[0.972s] -- Found crazyflie_interfaces: 1.0.3 (/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/share/crazyflie_interfaces/cmake)
+[0.982s] -- Found motion_capture_tracking_interfaces: 1.0.6 (/opt/ros/humble/share/motion_capture_tracking_interfaces/cmake)
+[0.995s] -- Found ros_environment: 3.2.2 (/opt/ros/humble/share/ros_environment/cmake)
+[1.001s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: program_options 
+[1.004s] -- Found libusb: /usr/lib/x86_64-linux-gnu/libusb-1.0.so  
+[1.057s] -- Configuring done
+[1.077s] -- Generating done
+[1.084s] -- Build files have been written to: /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie
+[1.093s] Invoked command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie' returned '0': AMENT_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:/opt/ros/humble LD_LIBRARY_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie
+[1.095s] Invoking command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie': AMENT_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:/opt/ros/humble LD_LIBRARY_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie -- -j12 -l12
+[1.139s] [ 10%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/Version.cpp.o[0m
+[1.139s] [ 10%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/Connection.cpp.o[0m
+[1.140s] [ 10%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/USBDevice.cpp.o[0m
+[1.140s] [ 10%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/Crazyradio.cpp.o[0m
+[1.140s] [ 12%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/CrazyflieUSB.cpp.o[0m
+[1.140s] [ 15%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/CrazyradioThread.cpp.o[0m
+[1.140s] [ 17%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/CrazyflieUSBThread.cpp.o[0m
+[1.141s] [ 20%] [32mBuilding CXX object CMakeFiles/teleop.dir/src/teleop.cpp.o[0m
+[1.147s] [ 22%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/src/USBManager.cpp.o[0m
+[3.393s] [ 25%] [32m[1mLinking CXX static library libcrazyflieLinkCpp.a[0m
+[3.447s] [ 25%] Built target crazyflieLinkCpp
+[3.463s] [ 27%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/src/Crazyflie.cpp.o[0m
+[3.463s] [ 30%] [32mBuilding CXX object deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/src/crtp.cpp.o[0m
+[5.070s] [ 32%] [32m[1mLinking CXX static library libcrazyflie_cpp.a[0m
+[5.117s] [ 32%] Built target crazyflie_cpp
+[5.137s] [ 45%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/listParams.dir/src/listParams.cpp.o[0m
+[5.141s] [ 45%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/scan.dir/src/scan.cpp.o[0m
+[5.141s] [ 45%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/listMemories.dir/src/listMemories.cpp.o[0m
+[5.141s] [ 45%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/version.dir/src/version.cpp.o[0m
+[5.142s] [ 52%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/battery.dir/src/battery.cpp.o[0m
+[5.142s] [ 52%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/src/listLogVariables.cpp.o[0m
+[5.142s] [ 52%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/console.dir/src/console.cpp.o[0m
+[5.142s] [ 52%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/comCheck.dir/src/comCheck.cpp.o[0m
+[5.142s] [ 55%] [32mBuilding CXX object CMakeFiles/crazyflie_server.dir/src/crazyflie_server.cpp.o[0m
+[5.143s] [ 60%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/reboot.dir/src/reboot.cpp.o[0m
+[5.143s] [ 60%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/log.dir/src/log.cpp.o[0m
+[7.041s] [ 62%] [32m[1mLinking CXX executable scan[0m
+[7.112s] [ 65%] [32m[1mLinking CXX executable listLogVariables[0m
+[7.112s] [ 67%] [32m[1mLinking CXX executable version[0m
+[7.164s] [ 70%] [32m[1mLinking CXX executable listParams[0m
+[7.211s] [ 72%] [32m[1mLinking CXX executable listMemories[0m
+[7.224s] [ 75%] [32m[1mLinking CXX executable console[0m
+[7.419s] [ 77%] [32m[1mLinking CXX executable battery[0m
+[7.422s] [ 80%] [32m[1mLinking CXX executable comCheck[0m
+[7.510s] [ 82%] [32m[1mLinking CXX executable reboot[0m
+[7.624s] [ 82%] Built target scan
+[7.650s] [ 82%] Built target listLogVariables
+[7.663s] [ 85%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o[0m
+[7.667s] [ 85%] Built target version
+[7.686s] [ 87%] [32mBuilding CXX object deps/crazyflie_tools/CMakeFiles/setParam.dir/src/setParam.cpp.o[0m
+[7.757s] [ 87%] Built target listParams
+[7.788s] [ 87%] Built target console
+[7.798s] [ 87%] Built target listMemories
+[7.913s] [ 90%] [32m[1mLinking CXX executable log[0m
+[7.940s] [ 90%] Built target battery
+[7.945s] [ 90%] Built target comCheck
+[7.957s] [ 90%] Built target reboot
+[8.103s] [ 90%] Built target log
+[9.109s] [ 92%] [32m[1mLinking CXX executable setParam[0m
+[9.260s] [ 95%] [32m[1mLinking CXX executable downloadUSDLogfile[0m
+[9.316s] [ 95%] Built target setParam
+[9.418s] [ 95%] Built target downloadUSDLogfile
+[12.583s] [ 97%] [32m[1mLinking CXX executable teleop[0m
+[13.136s] [ 97%] Built target teleop
+[25.800s] [100%] [32m[1mLinking CXX executable crazyflie_server[0m
+[27.361s] [100%] Built target crazyflie_server
+[27.373s] Invoked command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie' returned '0': AMENT_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:/opt/ros/humble LD_LIBRARY_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie -- -j12 -l12
+[27.373s] Invoking command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie': AMENT_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:/opt/ros/humble LD_LIBRARY_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie
+[27.379s] -- Install configuration: ""
+[27.379s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/comCheck
+[27.380s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/scan
+[27.381s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/listParams
+[27.381s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/listLogVariables
+[27.382s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/listMemories
+[27.383s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/reboot
+[27.384s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/battery
+[27.384s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/version
+[27.385s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/console
+[27.386s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/log
+[27.387s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/setParam
+[27.387s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/downloadUSDLogfile
+[27.388s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/teleop
+[27.391s] -- Set runtime path of "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/teleop" to ""
+[27.391s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/crazyflie_server
+[27.399s] -- Set runtime path of "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/crazyflie_server" to ""
+[27.399s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/crazyflie_server.py
+[27.399s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/chooser.py
+[27.399s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/vel_mux.py
+[27.399s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/cfmult.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/simple_mapper_multiranger.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/aideck_streamer.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/gui.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/lib/crazyflie/flash.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch/launch.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch/teleop_launch.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//launch/launch_teleop2.py
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/config.rviz
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/teleop.yaml
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/server.yaml
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/crazyflies.yaml
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/motion_capture.yaml
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//config/aideck_streamer.yaml
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf
+[27.400s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf/cf2_assembly.stl
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf/crazyflie_description.urdf
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie//urdf/cf2_assembly_with_props.dae
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/ament_index/resource_index/package_run_dependencies/crazyflie
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/ament_index/resource_index/parent_prefix_path/crazyflie
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/ament_prefix_path.sh
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/ament_prefix_path.dsv
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/path.sh
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/environment/path.dsv
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.bash
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.sh
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.zsh
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/local_setup.dsv
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/package.dsv
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/ament_index/resource_index/packages/crazyflie
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/cmake/crazyflieConfig.cmake
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/cmake/crazyflieConfig-version.cmake
+[27.401s] -- Installing: /home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie/share/crazyflie/package.xml
+[27.403s] Invoked command in '/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie' returned '0': AMENT_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces:/opt/ros/humble LD_LIBRARY_PATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:${LD_LIBRARY_PATH} PYTHONPATH=/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie

@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: crazyflie-ros2-multiranger-simple-mapper
+Version: 0.0.0
+Summary: Simple mapper for Crazyflie using odometry and multiranger data
+Home-page: UNKNOWN
+Maintainer: Kimberly McGuire
+Maintainer-email: kimberly@bitcraze.io
+License: MIT
+Platform: UNKNOWN
+
+UNKNOWN
+

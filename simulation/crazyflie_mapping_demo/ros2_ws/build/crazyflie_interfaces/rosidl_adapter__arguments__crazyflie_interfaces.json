@@ -1,0 +1,27 @@
+{
+  "package_name": "crazyflie_interfaces",
+  "non_idl_tuples": [
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/ConnectionStatistics.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/ConnectionStatisticsArray.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/FullState.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/LogDataGeneric.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/Hover.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/LogBlock.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/Position.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/Status.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/TrajectoryPolynomialPiece.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:msg/VelocityWorld.msg",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/GoTo.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/Land.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/NotifySetpointsStop.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/SetGroupMask.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/StartTrajectory.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/Stop.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/Takeoff.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/UpdateParams.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/UploadTrajectory.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/RemoveLogging.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/AddLogging.srv",
+    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces:srv/Arm.srv"
+  ]
+}
