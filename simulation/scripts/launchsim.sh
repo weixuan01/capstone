@@ -2,8 +2,9 @@
 
 SIM_TYPE=$1
 
-source ~/crazyflie_mapping_demo/ros2_ws/install/setup.bash
-export GZ_SIM_RESOURCE_PATH="/home/$USER/crazyflie_mapping_demo/simulation_ws/crazyflie-simulation/simulator_files/gazebo/"
+BASE_DIR=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")") # get current dir
+source $BASE_DIR/../crazyflie_mapping_demo/ros2_ws/install/setup.bash # assumes crazyflie_mapping_demo and scripts folder are always in the same dir (simulation)
+export GZ_SIM_RESOURCE_PATH="$BASE_DIR/../crazyflie_mapping_demo/simulation_ws/crazyflie-simulation/simulator_files/gazebo/"
 
 if [ $SIM_TYPE = "wallfollowing" ]
 then

@@ -5,7 +5,9 @@ IMAGE_RESOLUTION=$2    # resolution (meters per pixel) = real-world size / image
 PNG_FILE=$3
 
 SDF_STL_NAME="$(basename "${PNG_FILE%.*}")"
-DESTINATION_PATH="$HOME/crazyflie_mapping_demo/ros2_ws/install/ros_gz_crazyflie_gazebo/share/ros_gz_crazyflie_gazebo/worlds/"
+
+BASE_DIR=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")") # get current dir
+DESTINATION_PATH="$BASE_DIR/../crazyflie_mapping_demo/ros2_ws/install/ros_gz_crazyflie_gazebo/share/ros_gz_crazyflie_gazebo/worlds/" ## assumes crazyflie_mapping_demo and scripts folder are always in the same dir (simulation)
 
 PNG23D_EXISTS=$(command -v png23d)
 if [ "$PNG23D_EXISTS" = "" ]
