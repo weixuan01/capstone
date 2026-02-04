@@ -49,7 +49,15 @@ if (WIN32)
   set(LIBUSB_INCLUDE_DIR libusb/libusb)
   set(LIBUSB_LIBRARY libusb)
 else()
-  find_package(libusb REQUIRED)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(libusb REQUIRED IMPORTED_TARGET libusb-1.0)
+    
+    set(LIBUSB_INCLUDE_DIR ${libusb_INCLUDE_DIRS})
+    set(LIBUSB_LIBRARY PkgConfig::libusb)
+    
+    if(NOT TARGET libusb::libusb)
+        add_library(libusb::libusb ALIAS PkgConfig::libusb)
+    endif()
 endif()
 
 include_directories(
