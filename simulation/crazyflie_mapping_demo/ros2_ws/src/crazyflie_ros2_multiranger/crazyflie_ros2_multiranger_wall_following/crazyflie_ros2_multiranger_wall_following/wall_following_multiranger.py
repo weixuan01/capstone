@@ -134,8 +134,7 @@ class WallFollowingMultiranger(Node):
         if side_range > 0.1:
             velocity_x, velocity_y, yaw_rate, state_wf = self.wall_following.wall_follower(
                 front_range, side_range, actual_yaw_rad, wf_dir, time_now)
-            print('velocity_x', velocity_x, 'velocity_y', velocity_y,
-                'yaw_rate', yaw_rate, 'state_wf', state_wf)
+
 
 
         msg = Twist()

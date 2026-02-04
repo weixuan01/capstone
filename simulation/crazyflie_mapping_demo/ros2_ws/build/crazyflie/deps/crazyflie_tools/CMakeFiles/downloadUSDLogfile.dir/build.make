@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie
 
 # Include any dependencies generated for this target.
 include deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/depend.make
@@ -70,18 +70,18 @@ include deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/progress.make
 include deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/flags.make
 
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o: deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/flags.make
-deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o: /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp
+deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o: /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o: deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o"
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o -MF CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o.d -o CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o -c /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o"
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o -MF CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o.d -o CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.o -c /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp
 
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.i"
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp > CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.i
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp > CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.i
 
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.s"
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp -o CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.s
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools/src/downloadUSDLogfile.cpp -o CMakeFiles/downloadUSDLogfile.dir/src/downloadUSDLogfile.cpp.s
 
 # Object files for target downloadUSDLogfile
 downloadUSDLogfile_OBJECTS = \
@@ -97,18 +97,18 @@ deps/crazyflie_tools/downloadUSDLogfile: /usr/lib/x86_64-linux-gnu/libboost_prog
 deps/crazyflie_tools/downloadUSDLogfile: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/libcrazyflieLinkCpp.a
 deps/crazyflie_tools/downloadUSDLogfile: /usr/lib/x86_64-linux-gnu/libusb-1.0.so
 deps/crazyflie_tools/downloadUSDLogfile: deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable downloadUSDLogfile"
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/downloadUSDLogfile.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable downloadUSDLogfile"
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/downloadUSDLogfile.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/build: deps/crazyflie_tools/downloadUSDLogfile
 .PHONY : deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/build
 
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/clean:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && $(CMAKE_COMMAND) -P CMakeFiles/downloadUSDLogfile.dir/cmake_clean.cmake
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools && $(CMAKE_COMMAND) -P CMakeFiles/downloadUSDLogfile.dir/cmake_clean.cmake
 .PHONY : deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/clean
 
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/depend
 

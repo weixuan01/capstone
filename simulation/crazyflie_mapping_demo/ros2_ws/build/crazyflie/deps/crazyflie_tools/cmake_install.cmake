@@ -1,8 +1,8 @@
-# Install script for directory: /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools
+# Install script for directory: /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/deps/crazyflie_tools
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie")
+  set(CMAKE_INSTALL_PREFIX "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/install/crazyflie")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

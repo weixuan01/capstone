@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_bringup
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_bringup
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup
 
 # Utility rule file for crazyflie_ros2_multiranger_bringup_uninstall.
 
@@ -67,7 +67,7 @@ include CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/compiler_dep
 include CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/progress.make
 
 CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall:
-	/usr/bin/cmake -P /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
+	/usr/bin/cmake -P /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
 
 crazyflie_ros2_multiranger_bringup_uninstall: CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall
 crazyflie_ros2_multiranger_bringup_uninstall: CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/clean:
 .PHONY : CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/clean
 
 CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_bringup /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_bringup /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup/CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_bringup /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyflie_ros2_multiranger/crazyflie_ros2_multiranger_bringup /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_ros2_multiranger_bringup/CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/crazyflie_ros2_multiranger_bringup_uninstall.dir/depend
 

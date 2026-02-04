@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples
 
 # Utility rule file for ament_cmake_python_build_crazyflie_examples_scripts.
 
@@ -67,7 +67,7 @@ include CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/compi
 include CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/progress.make
 
 CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/ament_cmake_python/crazyflie_examples && /usr/bin/python3 setup.py install_scripts -d scripts
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/ament_cmake_python/crazyflie_examples && /usr/bin/python3 setup.py install_scripts -d scripts
 
 ament_cmake_python_build_crazyflie_examples_scripts: CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts
 ament_cmake_python_build_crazyflie_examples_scripts: CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/clean:
 .PHONY : CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/clean
 
 CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ament_cmake_python_build_crazyflie_examples_scripts.dir/depend
 

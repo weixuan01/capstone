@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples
 
 # Utility rule file for crazyflie_examples_uninstall.
 
@@ -67,7 +67,7 @@ include CMakeFiles/crazyflie_examples_uninstall.dir/compiler_depend.make
 include CMakeFiles/crazyflie_examples_uninstall.dir/progress.make
 
 CMakeFiles/crazyflie_examples_uninstall:
-	/usr/bin/cmake -P /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
+	/usr/bin/cmake -P /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
 
 crazyflie_examples_uninstall: CMakeFiles/crazyflie_examples_uninstall
 crazyflie_examples_uninstall: CMakeFiles/crazyflie_examples_uninstall.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/crazyflie_examples_uninstall.dir/clean:
 .PHONY : CMakeFiles/crazyflie_examples_uninstall.dir/clean
 
 CMakeFiles/crazyflie_examples_uninstall.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles/crazyflie_examples_uninstall.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles/crazyflie_examples_uninstall.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/crazyflie_examples_uninstall.dir/depend
 

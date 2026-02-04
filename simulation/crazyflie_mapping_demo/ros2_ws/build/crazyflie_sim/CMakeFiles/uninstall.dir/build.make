@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim
 
 # Utility rule file for uninstall.
 
@@ -78,6 +78,6 @@ CMakeFiles/uninstall.dir/clean:
 .PHONY : CMakeFiles/uninstall.dir/clean
 
 CMakeFiles/uninstall.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim/CMakeFiles/uninstall.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim/CMakeFiles/uninstall.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/uninstall.dir/depend
 

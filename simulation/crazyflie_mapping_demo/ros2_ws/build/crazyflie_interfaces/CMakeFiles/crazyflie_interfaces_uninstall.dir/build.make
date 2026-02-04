@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces
 
 # Utility rule file for crazyflie_interfaces_uninstall.
 
@@ -67,7 +67,7 @@ include CMakeFiles/crazyflie_interfaces_uninstall.dir/compiler_depend.make
 include CMakeFiles/crazyflie_interfaces_uninstall.dir/progress.make
 
 CMakeFiles/crazyflie_interfaces_uninstall:
-	/usr/bin/cmake -P /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
+	/usr/bin/cmake -P /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
 
 crazyflie_interfaces_uninstall: CMakeFiles/crazyflie_interfaces_uninstall
 crazyflie_interfaces_uninstall: CMakeFiles/crazyflie_interfaces_uninstall.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/crazyflie_interfaces_uninstall.dir/clean:
 .PHONY : CMakeFiles/crazyflie_interfaces_uninstall.dir/clean
 
 CMakeFiles/crazyflie_interfaces_uninstall.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces/CMakeFiles/crazyflie_interfaces_uninstall.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_interfaces /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_interfaces/CMakeFiles/crazyflie_interfaces_uninstall.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/crazyflie_interfaces_uninstall.dir/depend
 

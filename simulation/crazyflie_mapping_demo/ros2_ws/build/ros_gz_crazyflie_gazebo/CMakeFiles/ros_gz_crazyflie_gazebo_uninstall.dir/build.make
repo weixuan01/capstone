@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo
 
 # Utility rule file for ros_gz_crazyflie_gazebo_uninstall.
 
@@ -67,7 +67,7 @@ include CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/compiler_depend.make
 include CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/progress.make
 
 CMakeFiles/ros_gz_crazyflie_gazebo_uninstall:
-	/usr/bin/cmake -P /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
+	/usr/bin/cmake -P /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo/ament_cmake_uninstall_target/ament_cmake_uninstall_target.cmake
 
 ros_gz_crazyflie_gazebo_uninstall: CMakeFiles/ros_gz_crazyflie_gazebo_uninstall
 ros_gz_crazyflie_gazebo_uninstall: CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/clean:
 .PHONY : CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/clean
 
 CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo/CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_gazebo/CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ros_gz_crazyflie_gazebo_uninstall.dir/depend
 

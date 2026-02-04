@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_examples
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -142,9 +142,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_examples/CMakeFiles 0
 .PHONY : all
 
 # The main clean target

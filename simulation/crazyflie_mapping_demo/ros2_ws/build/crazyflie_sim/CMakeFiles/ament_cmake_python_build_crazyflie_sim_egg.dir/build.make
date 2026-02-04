@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim
 
 # Utility rule file for ament_cmake_python_build_crazyflie_sim_egg.
 
@@ -67,7 +67,7 @@ include CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/compiler_depen
 include CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/progress.make
 
 CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim/ament_cmake_python/crazyflie_sim && /usr/bin/python3 setup.py egg_info
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim/ament_cmake_python/crazyflie_sim && /usr/bin/python3 setup.py egg_info
 
 ament_cmake_python_build_crazyflie_sim_egg: CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg
 ament_cmake_python_build_crazyflie_sim_egg: CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/build.make
@@ -82,6 +82,6 @@ CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/clean:
 .PHONY : CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/clean
 
 CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/depend:
-	cd /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim/CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie_sim/CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ament_cmake_python_build_crazyflie_sim_egg.dir/depend
 

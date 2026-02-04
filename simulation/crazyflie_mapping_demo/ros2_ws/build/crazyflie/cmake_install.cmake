@@ -1,8 +1,8 @@
-# Install script for directory: /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie
+# Install script for directory: /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie")
+  set(CMAKE_INSTALL_PREFIX "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/install/crazyflie")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -49,7 +49,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/comCheck"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/comCheck")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/comCheck")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/comCheck" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/comCheck")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -65,7 +65,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/scan"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/scan")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/scan")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/scan" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/scan")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -81,7 +81,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listParams"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/listParams")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/listParams")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listParams" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listParams")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -97,7 +97,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listLogVariables"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/listLogVariables")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/listLogVariables")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listLogVariables" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listLogVariables")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -113,7 +113,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listMemories"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/listMemories")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/listMemories")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listMemories" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/listMemories")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -129,7 +129,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/reboot"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/reboot")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/reboot")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/reboot" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/reboot")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -145,7 +145,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/battery"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/battery")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/battery")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/battery" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/battery")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -161,7 +161,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/version"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/version")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/version")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/version" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/version")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -177,7 +177,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/console"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/console")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/console")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/console" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/console")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -193,7 +193,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/log"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/log")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/log")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/log" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/log")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -209,7 +209,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/setParam"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/setParam")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/setParam")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/setParam" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/setParam")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -225,7 +225,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/downloadUSDLogfile"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/downloadUSDLogfile")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/downloadUSDLogfile")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/downloadUSDLogfile" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/downloadUSDLogfile")
     if(CMAKE_INSTALL_DO_STRIP)
@@ -241,12 +241,12 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/teleop"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/teleop")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/teleop")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/teleop" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/teleop")
     file(RPATH_CHANGE
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/teleop"
-         OLD_RPATH "/opt/ros/humble/lib:/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:"
+         OLD_RPATH "/opt/ros/humble/lib:/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:"
          NEW_RPATH "")
     if(CMAKE_INSTALL_DO_STRIP)
       execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/teleop")
@@ -261,12 +261,12 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/crazyflie_server"
          RPATH "")
   endif()
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/crazyflie_server")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE EXECUTABLE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/crazyflie_server")
   if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/crazyflie_server" AND
      NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/crazyflie_server")
     file(RPATH_CHANGE
          FILE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/crazyflie_server"
-         OLD_RPATH "/opt/ros/humble/lib:/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:"
+         OLD_RPATH "/opt/ros/humble/lib:/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/install/crazyflie_interfaces/lib:"
          NEW_RPATH "")
     if(CMAKE_INSTALL_DO_STRIP)
       execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/crazyflie/crazyflie_server")
@@ -276,31 +276,31 @@ endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/crazyflie" TYPE PROGRAM FILES
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/crazyflie_server.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/chooser.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/vel_mux.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/cfmult.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/simple_mapper_multiranger.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/aideck_streamer.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/gui.py"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/flash.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/crazyflie_server.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/chooser.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/vel_mux.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/cfmult.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/simple_mapper_multiranger.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/aideck_streamer.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/gui.py"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/scripts/flash.py"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie/" TYPE DIRECTORY FILES
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/launch"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/config"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/urdf"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/launch"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/config"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/urdf"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/crazyflie")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/crazyflie")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/parent_prefix_path" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/crazyflie")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/parent_prefix_path" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/crazyflie")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -308,7 +308,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie/environment" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/ament_prefix_path.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie/environment" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/ament_prefix_path.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -316,47 +316,47 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie/environment" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/path.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie/environment" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/path.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.bash")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.bash")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.sh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.sh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.zsh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.zsh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/local_setup.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/package.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_environment_hooks/package.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/packages" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_index/share/ament_index/resource_index/packages/crazyflie")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/packages" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_index/share/ament_index/resource_index/packages/crazyflie")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie/cmake" TYPE FILE FILES
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_core/crazyflieConfig.cmake"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_core/crazyflieConfig-version.cmake"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_core/crazyflieConfig.cmake"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/ament_cmake_core/crazyflieConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/crazyflie" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie/package.xml")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/cmake_install.cmake")
+  include("/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/deps/crazyflie_tools/cmake_install.cmake")
 
 endif()
 
@@ -368,5 +368,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

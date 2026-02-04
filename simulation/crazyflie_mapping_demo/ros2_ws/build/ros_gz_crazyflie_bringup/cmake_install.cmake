@@ -1,8 +1,8 @@
-# Install script for directory: /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup
+# Install script for directory: /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/weixuan/crazyflie_mapping_demo/ros2_ws/install/ros_gz_crazyflie_bringup")
+  set(CMAKE_INSTALL_PREFIX "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/install/ros_gz_crazyflie_bringup")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -43,19 +43,19 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/launch" TYPE DIRECTORY FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/launch/")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/launch" TYPE DIRECTORY FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/launch/")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/config" TYPE DIRECTORY FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/config/")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/config" TYPE DIRECTORY FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/config/")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/ros_gz_crazyflie_bringup")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/ros_gz_crazyflie_bringup")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/parent_prefix_path" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/ros_gz_crazyflie_bringup")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/parent_prefix_path" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_index/share/ament_index/resource_index/parent_prefix_path/ros_gz_crazyflie_bringup")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -63,7 +63,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/environment" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/ament_prefix_path.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/environment" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/ament_prefix_path.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -71,42 +71,42 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/environment" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/path.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/environment" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/path.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.bash")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.bash")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.sh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.sh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.zsh")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.zsh")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/local_setup.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/package.dsv")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_environment_hooks/package.dsv")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/packages" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_index/share/ament_index/resource_index/packages/ros_gz_crazyflie_bringup")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/packages" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_index/share/ament_index/resource_index/packages/ros_gz_crazyflie_bringup")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup/cmake" TYPE FILE FILES
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_core/ros_gz_crazyflie_bringupConfig.cmake"
-    "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_core/ros_gz_crazyflie_bringupConfig-version.cmake"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_core/ros_gz_crazyflie_bringupConfig.cmake"
+    "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/ament_cmake_core/ros_gz_crazyflie_bringupConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ros_gz_crazyflie_bringup" TYPE FILE FILES "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/package.xml")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -117,5 +117,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

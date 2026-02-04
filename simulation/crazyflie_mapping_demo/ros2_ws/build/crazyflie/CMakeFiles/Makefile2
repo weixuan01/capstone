@@ -54,10 +54,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie
+CMAKE_SOURCE_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/src/crazyswarm2/crazyflie
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie
+CMAKE_BINARY_DIR = /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -156,14 +156,14 @@ deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/clean: deps/crazyflie_tool
 CMakeFiles/uninstall.dir/all: CMakeFiles/crazyflie_uninstall.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/uninstall.dir/build.make CMakeFiles/uninstall.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/uninstall.dir/build.make CMakeFiles/uninstall.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num= "Built target uninstall"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num= "Built target uninstall"
 .PHONY : CMakeFiles/uninstall.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/uninstall.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/uninstall.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : CMakeFiles/uninstall.dir/rule
 
 # Convenience name for target.
@@ -182,14 +182,14 @@ CMakeFiles/uninstall.dir/clean:
 CMakeFiles/crazyflie_uninstall.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/crazyflie_uninstall.dir/build.make CMakeFiles/crazyflie_uninstall.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/crazyflie_uninstall.dir/build.make CMakeFiles/crazyflie_uninstall.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num= "Built target crazyflie_uninstall"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num= "Built target crazyflie_uninstall"
 .PHONY : CMakeFiles/crazyflie_uninstall.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/crazyflie_uninstall.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/crazyflie_uninstall.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : CMakeFiles/crazyflie_uninstall.dir/rule
 
 # Convenience name for target.
@@ -208,14 +208,14 @@ CMakeFiles/crazyflie_uninstall.dir/clean:
 CMakeFiles/teleop.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/teleop.dir/build.make CMakeFiles/teleop.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/teleop.dir/build.make CMakeFiles/teleop.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=37,38 "Built target teleop"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=37,38 "Built target teleop"
 .PHONY : CMakeFiles/teleop.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/teleop.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/teleop.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : CMakeFiles/teleop.dir/rule
 
 # Convenience name for target.
@@ -235,14 +235,14 @@ CMakeFiles/crazyflie_server.dir/all: deps/crazyflie_tools/crazyflie_cpp/CMakeFil
 CMakeFiles/crazyflie_server.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/crazyflie_server.dir/build.make CMakeFiles/crazyflie_server.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/crazyflie_server.dir/build.make CMakeFiles/crazyflie_server.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=19,20 "Built target crazyflie_server"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=19,20 "Built target crazyflie_server"
 .PHONY : CMakeFiles/crazyflie_server.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/crazyflie_server.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/crazyflie_server.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : CMakeFiles/crazyflie_server.dir/rule
 
 # Convenience name for target.
@@ -262,14 +262,14 @@ deps/crazyflie_tools/CMakeFiles/scan.dir/all: deps/crazyflie_tools/crazyflie_cpp
 deps/crazyflie_tools/CMakeFiles/scan.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/scan.dir/build.make deps/crazyflie_tools/CMakeFiles/scan.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/scan.dir/build.make deps/crazyflie_tools/CMakeFiles/scan.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=33,34 "Built target scan"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=33,34 "Built target scan"
 .PHONY : deps/crazyflie_tools/CMakeFiles/scan.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/scan.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/scan.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/scan.dir/rule
 
 # Convenience name for target.
@@ -289,14 +289,14 @@ deps/crazyflie_tools/CMakeFiles/listParams.dir/all: deps/crazyflie_tools/crazyfl
 deps/crazyflie_tools/CMakeFiles/listParams.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/listParams.dir/build.make deps/crazyflie_tools/CMakeFiles/listParams.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/listParams.dir/build.make deps/crazyflie_tools/CMakeFiles/listParams.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=27,28 "Built target listParams"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=27,28 "Built target listParams"
 .PHONY : deps/crazyflie_tools/CMakeFiles/listParams.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/listParams.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/listParams.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/listParams.dir/rule
 
 # Convenience name for target.
@@ -316,14 +316,14 @@ deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/all: deps/crazyflie_tools/c
 deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/build.make deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/build.make deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=23,24 "Built target listLogVariables"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=23,24 "Built target listLogVariables"
 .PHONY : deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/listLogVariables.dir/rule
 
 # Convenience name for target.
@@ -343,14 +343,14 @@ deps/crazyflie_tools/CMakeFiles/listMemories.dir/all: deps/crazyflie_tools/crazy
 deps/crazyflie_tools/CMakeFiles/listMemories.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/listMemories.dir/build.make deps/crazyflie_tools/CMakeFiles/listMemories.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/listMemories.dir/build.make deps/crazyflie_tools/CMakeFiles/listMemories.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=25,26 "Built target listMemories"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=25,26 "Built target listMemories"
 .PHONY : deps/crazyflie_tools/CMakeFiles/listMemories.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/listMemories.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/listMemories.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/listMemories.dir/rule
 
 # Convenience name for target.
@@ -370,14 +370,14 @@ deps/crazyflie_tools/CMakeFiles/reboot.dir/all: deps/crazyflie_tools/crazyflie_c
 deps/crazyflie_tools/CMakeFiles/reboot.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/reboot.dir/build.make deps/crazyflie_tools/CMakeFiles/reboot.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/reboot.dir/build.make deps/crazyflie_tools/CMakeFiles/reboot.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=31,32 "Built target reboot"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=31,32 "Built target reboot"
 .PHONY : deps/crazyflie_tools/CMakeFiles/reboot.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/reboot.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/reboot.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/reboot.dir/rule
 
 # Convenience name for target.
@@ -397,14 +397,14 @@ deps/crazyflie_tools/CMakeFiles/battery.dir/all: deps/crazyflie_tools/crazyflie_
 deps/crazyflie_tools/CMakeFiles/battery.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/battery.dir/build.make deps/crazyflie_tools/CMakeFiles/battery.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/battery.dir/build.make deps/crazyflie_tools/CMakeFiles/battery.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=1,2 "Built target battery"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=1,2 "Built target battery"
 .PHONY : deps/crazyflie_tools/CMakeFiles/battery.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/battery.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/battery.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/battery.dir/rule
 
 # Convenience name for target.
@@ -424,14 +424,14 @@ deps/crazyflie_tools/CMakeFiles/version.dir/all: deps/crazyflie_tools/crazyflie_
 deps/crazyflie_tools/CMakeFiles/version.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/version.dir/build.make deps/crazyflie_tools/CMakeFiles/version.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/version.dir/build.make deps/crazyflie_tools/CMakeFiles/version.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=39,40 "Built target version"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=39,40 "Built target version"
 .PHONY : deps/crazyflie_tools/CMakeFiles/version.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/version.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/version.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/version.dir/rule
 
 # Convenience name for target.
@@ -451,14 +451,14 @@ deps/crazyflie_tools/CMakeFiles/console.dir/all: deps/crazyflie_tools/crazyflie_
 deps/crazyflie_tools/CMakeFiles/console.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/console.dir/build.make deps/crazyflie_tools/CMakeFiles/console.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/console.dir/build.make deps/crazyflie_tools/CMakeFiles/console.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=5,6 "Built target console"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=5,6 "Built target console"
 .PHONY : deps/crazyflie_tools/CMakeFiles/console.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/console.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/console.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/console.dir/rule
 
 # Convenience name for target.
@@ -478,14 +478,14 @@ deps/crazyflie_tools/CMakeFiles/comCheck.dir/all: deps/crazyflie_tools/crazyflie
 deps/crazyflie_tools/CMakeFiles/comCheck.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/comCheck.dir/build.make deps/crazyflie_tools/CMakeFiles/comCheck.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/comCheck.dir/build.make deps/crazyflie_tools/CMakeFiles/comCheck.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=3,4 "Built target comCheck"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=3,4 "Built target comCheck"
 .PHONY : deps/crazyflie_tools/CMakeFiles/comCheck.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/comCheck.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/comCheck.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/comCheck.dir/rule
 
 # Convenience name for target.
@@ -505,14 +505,14 @@ deps/crazyflie_tools/CMakeFiles/log.dir/all: deps/crazyflie_tools/crazyflie_cpp/
 deps/crazyflie_tools/CMakeFiles/log.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/log.dir/build.make deps/crazyflie_tools/CMakeFiles/log.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/log.dir/build.make deps/crazyflie_tools/CMakeFiles/log.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=29,30 "Built target log"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=29,30 "Built target log"
 .PHONY : deps/crazyflie_tools/CMakeFiles/log.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/log.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/log.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/log.dir/rule
 
 # Convenience name for target.
@@ -532,14 +532,14 @@ deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/all: deps/crazyflie_tools
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/build.make deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/build.make deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=21,22 "Built target downloadUSDLogfile"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=21,22 "Built target downloadUSDLogfile"
 .PHONY : deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/downloadUSDLogfile.dir/rule
 
 # Convenience name for target.
@@ -559,14 +559,14 @@ deps/crazyflie_tools/CMakeFiles/setParam.dir/all: deps/crazyflie_tools/crazyflie
 deps/crazyflie_tools/CMakeFiles/setParam.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/setParam.dir/build.make deps/crazyflie_tools/CMakeFiles/setParam.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/CMakeFiles/setParam.dir/build.make deps/crazyflie_tools/CMakeFiles/setParam.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=35,36 "Built target setParam"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=35,36 "Built target setParam"
 .PHONY : deps/crazyflie_tools/CMakeFiles/setParam.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/CMakeFiles/setParam.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 14
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/CMakeFiles/setParam.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/CMakeFiles/setParam.dir/rule
 
 # Convenience name for target.
@@ -585,14 +585,14 @@ deps/crazyflie_tools/CMakeFiles/setParam.dir/clean:
 deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/all: deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/build.make deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/build.make deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=16,17,18 "Built target crazyflie_cpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=16,17,18 "Built target crazyflie_cpp"
 .PHONY : deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 12
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 12
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/rule
 
 # Convenience name for target.
@@ -611,14 +611,14 @@ deps/crazyflie_tools/crazyflie_cpp/CMakeFiles/crazyflie_cpp.dir/clean:
 deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all:
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/build.make deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/depend
 	$(MAKE) $(MAKESILENT) -f deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/build.make deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=7,8,9,10,11,12,13,14,15 "Built target crazyflieLinkCpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles --progress-num=7,8,9,10,11,12,13,14,15 "Built target crazyflieLinkCpp"
 .PHONY : deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
 
 # Build rule for subdir invocation for target.
 deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 9
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/crazyflie/CMakeFiles 0
 .PHONY : deps/crazyflie_tools/crazyflie_cpp/crazyflie-link-cpp/CMakeFiles/crazyflieLinkCpp.dir/rule
 
 # Convenience name for target.
