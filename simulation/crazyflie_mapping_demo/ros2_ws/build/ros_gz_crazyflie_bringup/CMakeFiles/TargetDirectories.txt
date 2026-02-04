@@ -1,9 +1,0 @@
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/uninstall.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/ros_gz_crazyflie_bringup_uninstall.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/test.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/edit_cache.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/rebuild_cache.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/list_install_components.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/install.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/install/local.dir
-/home/weixuan/capstone/simulation/crazyflie_mapping_demo/ros2_ws/build/ros_gz_crazyflie_bringup/CMakeFiles/install/strip.dir

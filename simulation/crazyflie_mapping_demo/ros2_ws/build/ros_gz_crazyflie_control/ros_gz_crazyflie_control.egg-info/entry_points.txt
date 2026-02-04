@@ -1,3 +1,0 @@
-[console_scripts]
-control_services = ros_gz_crazyflie_control.control_services:main
-
