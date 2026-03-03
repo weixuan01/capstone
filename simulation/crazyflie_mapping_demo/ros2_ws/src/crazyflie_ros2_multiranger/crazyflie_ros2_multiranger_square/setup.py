@@ -17,13 +17,9 @@ setup(
     maintainer_email='poonweixuan@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
     entry_points={
         'console_scripts': [
+            'square_multiranger = crazyflie_ros2_multiranger_square.square_multiranger:main',
         ],
     },
 )
