@@ -28,6 +28,7 @@ then
     then
         ros2 launch crazyflie_ros2_multiranger_bringup square_mapper_simulation.launch.py
     elif [[ $TYPE == 'frontier-exploration' ]]
+    then
         ros2 launch crazyflie_ros2_multiranger_bringup frontier_exploration_mapper_simulation.launch.py
     else
         display_help
