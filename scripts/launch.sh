@@ -11,7 +11,7 @@ export GZ_SIM_RESOURCE_PATH="$BASE_DIR/../simulation/crazyflie_mapping_demo/simu
 display_help() {
     echo "Usage format: ./launch.sh <A> <B>"
     echo "    A: sim | real"
-    echo "    B: wallfollowing | square | manual "
+    echo "    B: wallfollowing | manual | square | frontier-exploration"
     exit 1
 }
 
@@ -27,6 +27,8 @@ then
     elif [[ $TYPE == "square" ]]
     then
         ros2 launch crazyflie_ros2_multiranger_bringup square_mapper_simulation.launch.py
+    elif [[ $TYPE == 'frontier-exploration' ]]
+        ros2 launch crazyflie_ros2_multiranger_bringup frontier_exploration_mapper_simulation.launch.py
     else
         display_help
     fi
@@ -43,6 +45,9 @@ then
     elif [[ $TYPE == "square" ]]
     then
         ros2 launch crazyflie_ros2_multiranger_bringup square_mapper_real.launch.py
+    elif [[ $TYPE == 'frontier-exploration' ]]
+    then
+        ros2 launch crazyflie_ros2_multiranger_bringup frontier_exploration_mapper_real.launch.py
     else
         display_help
     fi
