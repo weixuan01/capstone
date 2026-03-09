@@ -11,7 +11,7 @@ export GZ_SIM_RESOURCE_PATH="$BASE_DIR/../simulation/crazyflie_mapping_demo/simu
 display_help() {
     echo "Usage format: ./launch.sh <A> <B>"
     echo "    A: sim | real"
-    echo "    B: wallfollowing | square (sim only) | manual "
+    echo "    B: wallfollowing | square | manual "
     exit 1
 }
 
@@ -40,6 +40,9 @@ then
     then
         ros2 launch crazyflie_ros2_multiranger_bringup simple_mapper_real.launch.py &
         gnome-terminal -- bash -c "ros2 run teleop_twist_keyboard teleop_twist_keyboard; bash"
+    elif [[ $TYPE == "square" ]]
+    then
+        ros2 launch crazyflie_ros2_multiranger_bringup square_mapper_real.launch.py
     else
         display_help
     fi
