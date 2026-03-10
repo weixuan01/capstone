@@ -7,7 +7,7 @@ PNG_FILE=$3
 SDF_STL_NAME="$(basename "${PNG_FILE%.*}")"
 
 BASE_DIR=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")") # get current dir
-DESTINATION_PATH="$BASE_DIR/../simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo/worlds/" # assumes scripts and simulation folder are always in the same dir (capstone)
+DESTINATION_PATH="$BASE_DIR/../core/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_gazebo/worlds/" # assumes scripts and core folder are always in the same dir (capstone)
 
 PNG23D_EXISTS=$(command -v png23d)
 if [ "$PNG23D_EXISTS" = "" ]

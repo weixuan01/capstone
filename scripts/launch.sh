@@ -5,7 +5,7 @@ TYPE=$2
 MAP=$3
 
 BASE_DIR=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")") # Get dir of script
-SIM_LAUNCH_PATH="$BASE_DIR/../simulation/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/launch/crazyflie_simulation.launch.py"
+SIM_LAUNCH_PATH="$BASE_DIR/../core/crazyflie_mapping_demo/ros2_ws/src/ros_gz_crazyflie/ros_gz_crazyflie_bringup/launch/crazyflie_simulation.launch.py"
 
 display_help() {
     echo "Usage format: ./launch.sh <MODE> <TYPE> [MAP]"
@@ -15,8 +15,8 @@ display_help() {
     exit 1 # Terminates the script
 }
 
-source $BASE_DIR/../simulation/crazyflie_mapping_demo/ros2_ws/install/setup.bash # Assumes scripts and simulation folder are always in the same dir (capstone)
-export GZ_SIM_RESOURCE_PATH="$BASE_DIR/../simulation/crazyflie_mapping_demo/simulation_ws/crazyflie-simulation/simulator_files/gazebo/"
+source $BASE_DIR/../core/crazyflie_mapping_demo/ros2_ws/install/setup.bash # Assumes scripts and core folder are always in the same dir (capstone)
+export GZ_SIM_RESOURCE_PATH="$BASE_DIR/../core/crazyflie_mapping_demo/simulation_ws/crazyflie-simulation/simulator_files/gazebo/"
 
 if [[ -z "$MODE" ]] || [[ -z "$TYPE" ]] # If no. of input parameters < 2
 then
@@ -35,14 +35,14 @@ then
     if [[ -n "$MAP" ]]
     then
         # Check if the input map name is not the current map, otherwise skip overwrite
-        if ! grep -q "$MAP.sdf -r" "$SIM_LAUNCH_PATH"
+        if ! grep -q "'$MAP.sdf -r'" $SIM_LAUNCH_PATH
         then
             # sed -i 's/pattern/replacement/'
-            sed -i "s/[^ ']*\.sdf -r/$MAP.sdf -r/" "$SIM_LAUNCH_PATH"
+            sed -i "s/'.*\.sdf -r'/'$MAP.sdf -r'/" $SIM_LAUNCH_PATH
 
             # Rebuild project
-            "$BASE_DIR/build-project.sh"
-            source $BASE_DIR/../simulation/crazyflie_mapping_demo/ros2_ws/install/setup.bash # Re-source after rebuilding
+            $BASE_DIR/build-project.sh
+            source $BASE_DIR/../core/crazyflie_mapping_demo/ros2_ws/install/setup.bash # Re-source after rebuilding
         fi
     fi
 
