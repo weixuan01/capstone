@@ -68,7 +68,7 @@
     </include>
 
     <model name="maze">
-      <pose>-8 6 0 0 0 0</pose>	
+      <pose>-8 5 0 0 0 0</pose>	
       <static>true</static>
       <link name="map_link">
         <collision name="collision">

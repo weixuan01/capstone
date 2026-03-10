@@ -45,14 +45,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'robot_prefix': 'crazyflie'},
-            {'use_sim_time': True},
-            {'delay': 5.0},
-            {'max_turn_rate': 0.7},
-            {'max_forward_speed': 0.5},
-            {'target_altitude': 0.5},
-            {'alt_kp': 1.2},
-            {'max_vz': 0.4},
-            {'max_obstacle_distance': 0.3}
+            {'use_sim_time': True}
         ]
     )
 
