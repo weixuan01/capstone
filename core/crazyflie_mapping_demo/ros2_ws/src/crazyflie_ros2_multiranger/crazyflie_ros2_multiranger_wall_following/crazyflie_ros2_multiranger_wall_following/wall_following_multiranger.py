@@ -44,6 +44,8 @@ class WallFollowingMultiranger(Node):
         max_forward_speed = self.get_parameter('max_forward_speed').value
         self.declare_parameter('wall_following_direction', 'right')
         self.wall_following_direction = self.get_parameter('wall_following_direction').value
+        self.declare_parameter('invert_yaw_command', False)
+        self.invert_yaw_command = self.get_parameter('invert_yaw_command').value
 
         self.odom_subscriber = self.create_subscription(
             Odometry, robot_prefix + '/odom', self.odom_subscribe_callback, 10)
@@ -55,7 +57,9 @@ class WallFollowingMultiranger(Node):
 
         self.position = [0.0, 0.0, 0.0]
         self.angles = [0.0, 0.0, 0.0]
-        self.ranges = [0.0, 0.0, 0.0, 0.0]
+        self.ranges = [0.0, 0.0, 0.0, 0.0]        
+        self.last_debug_time = 0.0
+        self.last_state = None
 
         self.position_update = False
 
@@ -134,13 +138,22 @@ class WallFollowingMultiranger(Node):
         if side_range > 0.1:
             velocity_x, velocity_y, yaw_rate, state_wf = self.wall_following.wall_follower(
                 front_range, side_range, actual_yaw_rad, wf_dir, time_now)
+        
+        # after wall_follower(...)
+        if state_wf != self.last_state or (time_now - self.last_debug_time) > 0.5:
+            self.get_logger().info(
+                f"state={state_wf.name} front={front_range:.2f} side={side_range:.2f} "
+                f"yaw={actual_yaw_rad:.2f} cmd_yaw={yaw_rate:.2f}"
+            )
+            self.last_state = state_wf
+            self.last_debug_time = time_now
 
-
+        cmd_yaw = -yaw_rate if self.invert_yaw_command else yaw_rate
 
         msg = Twist()
         msg.linear.x = velocity_x
         msg.linear.y = velocity_y
-        msg.angular.z = yaw_rate
+        msg.angular.z = cmd_yaw
         self.twist_publisher.publish(msg)
 
     def odom_subscribe_callback(self, msg):
