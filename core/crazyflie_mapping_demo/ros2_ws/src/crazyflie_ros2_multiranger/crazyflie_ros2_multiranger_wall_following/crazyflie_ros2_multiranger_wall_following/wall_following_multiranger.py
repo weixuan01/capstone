@@ -139,7 +139,7 @@ class WallFollowingMultiranger(Node):
             velocity_x, velocity_y, yaw_rate, state_wf = self.wall_following.wall_follower(
                 front_range, side_range, actual_yaw_rad, wf_dir, time_now)
         
-        # after wall_follower(...)
+        # for debugging
         if state_wf != self.last_state or (time_now - self.last_debug_time) > 0.5:
             self.get_logger().info(
                 f"state={state_wf.name} front={front_range:.2f} side={side_range:.2f} "
