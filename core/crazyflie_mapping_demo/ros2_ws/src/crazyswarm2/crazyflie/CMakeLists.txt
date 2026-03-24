@@ -125,6 +125,7 @@ install(PROGRAMS
   scripts/cfmult.py
   scripts/simple_mapper_multiranger.py
   scripts/aideck_streamer.py
+  scripts/aideck_udp_streamer.py
   scripts/gui.py
   scripts/flash.py
   DESTINATION lib/${PROJECT_NAME}
@@ -135,6 +136,7 @@ install(DIRECTORY
   launch
   config
   urdf
+  models
   DESTINATION share/${PROJECT_NAME}/
 )
 
