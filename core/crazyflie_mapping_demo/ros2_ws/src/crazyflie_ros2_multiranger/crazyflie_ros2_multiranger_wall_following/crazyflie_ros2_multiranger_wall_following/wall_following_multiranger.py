@@ -52,6 +52,16 @@ class WallFollowingMultiranger(Node):
         self.ranges_subscriber = self.create_subscription(
             LaserScan, robot_prefix + '/scan', self.scan_subscribe_callback, 10)
 
+        self.declare_parameter('takeoff_ready_time', 1.0)
+        self.takeoff_ready_time = float(self.get_parameter('takeoff_ready_time').value)
+
+        self.last_odom_time = None
+        self.ready_since = None
+        self.takeoff_sent = False
+
+        self.wait_for_start = True
+        self.start_clock = None
+
         # add service to stop wall following and make the crazyflie land
         self.srv = self.create_service(Trigger, robot_prefix + '/stop_wall_following', self.stop_wall_following_cb)
 
@@ -80,9 +90,6 @@ class WallFollowingMultiranger(Node):
         # Give a take off command but wait for the delay to start the wall following
         self.wait_for_start = True
         self.start_clock = self.get_clock().now().nanoseconds * 1e-9
-        msg = Twist()
-        msg.linear.z = 0.5
-        self.twist_publisher.publish(msg)
 
     def stop_wall_following_cb(self, request, response):
         self.get_logger().info('Stopping wall following')
@@ -99,32 +106,55 @@ class WallFollowingMultiranger(Node):
         return response
 
     def timer_callback(self):
+        time_now = self.get_clock().now().nanoseconds * 1e-9
 
-        # wait for the delay to pass and then start wall following
+        # Phase 1: wait for fresh odom before takeoff
+        if not self.takeoff_sent:
+            odom_fresh = (
+                self.position_update and
+                self.last_odom_time is not None and
+                (time_now - self.last_odom_time) < 0.2
+            )
+
+            if odom_fresh:
+                if self.ready_since is None:
+                    self.ready_since = time_now
+                elif (time_now - self.ready_since) >= self.takeoff_ready_time:
+                    self.get_logger().info('Estimator ready, sending takeoff trigger')
+                    msg = Twist()
+                    msg.linear.z = 0.5
+                    self.twist_publisher.publish(msg)
+
+                    self.takeoff_sent = True
+                    self.start_clock = time_now
+            else:
+                self.ready_since = None
+
+            return
+
+        # Phase 2: hover and settle before wall following
         if self.wait_for_start:
-            if self.get_clock().now().nanoseconds * 1e-9 - self.start_clock > self.delay:
+            hold = Twist()
+            self.twist_publisher.publish(hold)
+
+            if time_now - self.start_clock > self.delay:
                 self.get_logger().info('Starting wall following')
                 self.wait_for_start = False
-            else:
-                return
 
-        # initialize variables
+            return
+
+        # Phase 3: actual wall following
         velocity_x = 0.0
         velocity_y = 0.0
         yaw_rate = 0.0
         state_wf = WallFollowing.StateWallFollowing.HOVER
 
-        # Get Yaw
         actual_yaw_rad = self.angles[2]
 
-        # get front and side range in meters
         right_range = self.ranges[1]
         front_range = self.ranges[2]
         left_range = self.ranges[3]
 
-        #self.get_logger().info(f"Front range: {front_range}, Right range: {right_range}, Left range: {left_range}")
-
-        # choose here the direction that you want the wall following to turn to
         if self.wall_following_direction == 'right':
             wf_dir = WallFollowing.WallFollowingDirection.RIGHT
             side_range = left_range
@@ -132,12 +162,10 @@ class WallFollowingMultiranger(Node):
             wf_dir = WallFollowing.WallFollowingDirection.LEFT
             side_range = right_range
 
-        time_now = self.get_clock().now().nanoseconds * 1e-9
-
-        # get velocity commands and current state from wall following state machine
         if side_range > 0.1:
             velocity_x, velocity_y, yaw_rate, state_wf = self.wall_following.wall_follower(
-                front_range, side_range, actual_yaw_rad, wf_dir, time_now)
+                front_range, side_range, actual_yaw_rad, wf_dir, time_now
+            )
         
         # for debugging
         if state_wf != self.last_state or (time_now - self.last_debug_time) > 0.5:
@@ -155,6 +183,7 @@ class WallFollowingMultiranger(Node):
         msg.linear.y = velocity_y
         msg.angular.z = cmd_yaw
         self.twist_publisher.publish(msg)
+        
 
     def odom_subscribe_callback(self, msg):
         self.position[0] = msg.pose.pose.position.x
@@ -166,6 +195,7 @@ class WallFollowingMultiranger(Node):
         self.angles[1] = euler[1]
         self.angles[2] = euler[2]
         self.position_update = True
+        self.last_odom_time = self.get_clock().now().nanoseconds * 1e-9
 
     def scan_subscribe_callback(self, msg):
         self.ranges = msg.ranges

@@ -34,8 +34,9 @@ class VelMux(Node):
             10)
         self.msg_cmd_vel = Twist()
         self.received_first_cmd_vel = False
-        timer_period = 0.1
+        timer_period = 0.05
         self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.takeoff_until = 0.0
         self.takeoff_client = self.create_client(Takeoff, robot_prefix + '/takeoff')
         self.publisher_hover = self.create_publisher(Hover, robot_prefix + '/cmd_hover', 10)
         self.land_client = self.create_client(Land, robot_prefix + '/land')
@@ -57,31 +58,46 @@ class VelMux(Node):
             self.received_first_cmd_vel = True
 
     def timer_callback(self):
+        now = time.monotonic()
+
         if self.received_first_cmd_vel and self.cf_has_taken_off is False:
             req = Takeoff.Request()
             req.height = self.hover_height
             req.duration = rclpy.duration.Duration(seconds=2.0).to_msg()
             self.takeoff_client.call_async(req)
+
             self.cf_has_taken_off = True
-            time.sleep(2.0)        
+            self.takeoff_until = now + 2.0
+            return
+
         if self.received_first_cmd_vel and self.cf_has_taken_off:
-            if self.msg_cmd_vel.linear.z >= 0:
+            if self.msg_cmd_vel.linear.z >= 0.0:
                 msg = Hover()
-                msg.vx = self.msg_cmd_vel.linear.x
-                msg.vy = self.msg_cmd_vel.linear.y
-                msg.yaw_rate = self.msg_cmd_vel.angular.z
                 msg.z_distance = self.hover_height
+
+                # During takeoff, force pure hover
+                if now < self.takeoff_until:
+                    msg.vx = 0.0
+                    msg.vy = 0.0
+                    msg.yaw_rate = 0.0
+                else:
+                    msg.vx = self.msg_cmd_vel.linear.x
+                    msg.vy = self.msg_cmd_vel.linear.y
+                    msg.yaw_rate = self.msg_cmd_vel.angular.z
+
                 self.publisher_hover.publish(msg)
             else:
                 req = NotifySetpointsStop.Request()
                 self.notify_client.call_async(req)
+
                 req = Land.Request()
                 req.height = 0.1
                 req.duration = rclpy.duration.Duration(seconds=2.0).to_msg()
                 self.land_client.call_async(req)
-                time.sleep(2.0)        
+
                 self.cf_has_taken_off = False
                 self.received_first_cmd_vel = False
+                self.takeoff_until = 0.0
 
 def main(args=None):
     rclpy.init(args=args)
