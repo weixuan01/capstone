@@ -2,6 +2,13 @@
 
 <sdf version="1.8">
   <world name="demo">
+  
+  <physics name="3x_speed" type="ode">
+      <real_time_factor>3.0</real_time_factor>
+      <real_time_update_rate>3000</real_time_update_rate>
+      <max_step_size>0.001</max_step_size>
+    </physics>
+  
     <plugin
       filename="gz-sim-physics-system"
       name="gz::sim::systems::Physics">
