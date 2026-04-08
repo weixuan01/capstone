@@ -57,7 +57,7 @@ def generate_launch_description():
             {'mapping_start_delay': 3.0},
             {'require_fresh_odom': True},
             {'recenter_initial_yaw': False},
-        ],
+        ]
     )
 
     wall_following = Node(

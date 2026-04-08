@@ -657,26 +657,26 @@ class AiDeckUdpStreamer(Node):
                             # Publish overlay image on /aideck/image_raw
                             self.publish_cv_image(display_img, self.publisher_, "aideck_camera")
 
-                            # Debug windows
-                            cv2.imshow("camera", display_img)
+                            # # Debug windows
+                            # cv2.imshow("camera", display_img)
 
-                            if debug_crop is not None:
-                                debug_big = cv2.resize(debug_crop, (280, 280), interpolation=cv2.INTER_NEAREST)
-                                cv2.imshow("warped_paper", debug_big)
-                            else:
-                                blank_warp = np.ones((280, 280), dtype=np.uint8) * 255
-                                cv2.putText(blank_warp, "No crop", (70, 140),
-                                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, 0, 2, cv2.LINE_AA)
-                                cv2.imshow("warped_paper", blank_warp)
+                            # if debug_crop is not None:
+                            #     debug_big = cv2.resize(debug_crop, (280, 280), interpolation=cv2.INTER_NEAREST)
+                            #     cv2.imshow("warped_paper", debug_big)
+                            # else:
+                            #     blank_warp = np.ones((280, 280), dtype=np.uint8) * 255
+                            #     cv2.putText(blank_warp, "No crop", (70, 140),
+                            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, 0, 2, cv2.LINE_AA)
+                            #     cv2.imshow("warped_paper", blank_warp)
 
-                            if mnist_img is not None:
-                                mnist_big = cv2.resize(mnist_img, (280, 280), interpolation=cv2.INTER_NEAREST)
-                                cv2.imshow("mnist_input", mnist_big)
-                            else:
-                                blank = np.ones((280, 280), dtype=np.uint8) * 255
-                                cv2.imshow("mnist_input", blank)
+                            # if mnist_img is not None:
+                            #     mnist_big = cv2.resize(mnist_img, (280, 280), interpolation=cv2.INTER_NEAREST)
+                            #     cv2.imshow("mnist_input", mnist_big)
+                            # else:
+                            #     blank = np.ones((280, 280), dtype=np.uint8) * 255
+                            #     cv2.imshow("mnist_input", blank)
 
-                            cv2.waitKey(1)
+                            # cv2.waitKey(1)
 
                         else:
                             self.get_logger().warn("Failed to decode image")

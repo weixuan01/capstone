@@ -1,87 +1,121 @@
 #!/usr/bin/env python3
-
-""" This simple mapper is loosely based on both the bitcraze cflib point cloud example
- https://github.com/bitcraze/crazyflie-lib-python/blob/master/examples/multiranger/multiranger_pointcloud.py
- and the webots epuck simple mapper example:
- https://github.com/cyberbotics/webots_ros2
-
- Originally from https://github.com/knmcguire/crazyflie_ros2_experimental/
- """
+import math
+import numpy as np
 
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile
 
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, OccupancyGrid
 from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import TransformStamped
-from tf2_ros import StaticTransformBroadcaster
+from tf2_ros import TransformBroadcaster
 
 import tf_transformations
-import math
-import numpy as np
-
-GLOBAL_SIZE_X = 20.0
-GLOBAL_SIZE_Y = 20.0
-MAP_RES = 0.1
 
 
 class SimpleMapperMultiranger(Node):
     def __init__(self):
         super().__init__('simple_mapper_multiranger')
+
         self.declare_parameter('robot_prefix', '/crazyflie')
-        robot_prefix = self.get_parameter('robot_prefix').value
+        self.robot_prefix = self.get_parameter('robot_prefix').value
+
+        # Map geometry
+        self.declare_parameter('map_size_x', 40.0)
+        self.declare_parameter('map_size_y', 40.0)
+        self.declare_parameter('map_resolution', 0.1)
+
+        self.map_size_x = float(self.get_parameter('map_size_x').value)
+        self.map_size_y = float(self.get_parameter('map_size_y').value)
+        self.map_resolution = float(self.get_parameter('map_resolution').value)
+
+        if self.map_size_x <= 0.0 or self.map_size_y <= 0.0 or self.map_resolution <= 0.0:
+            raise ValueError('map_size_x, map_size_y, and map_resolution must be > 0')
+
+        self.map_width = int(round(self.map_size_x / self.map_resolution))
+        self.map_height = int(round(self.map_size_y / self.map_resolution))
+
+        # Startup/mapping gating
+        self.declare_parameter('min_mapping_height', 0.15)
+        self.declare_parameter('mapping_start_delay', 1.0)
+        self.declare_parameter('require_fresh_odom', True)
+        self.declare_parameter('recenter_initial_yaw', False)
+
+        self.min_mapping_height = float(self.get_parameter('min_mapping_height').value)
+        self.mapping_start_delay = float(self.get_parameter('mapping_start_delay').value)
+        self.require_fresh_odom = bool(self.get_parameter('require_fresh_odom').value)
+        self.recenter_initial_yaw = bool(self.get_parameter('recenter_initial_yaw').value)
 
         self.odom_subscriber = self.create_subscription(
-            Odometry, robot_prefix + '/odom', self.odom_subscribe_callback, 10)
+            Odometry, self.robot_prefix + '/odom', self.odom_subscribe_callback, 10)
         self.ranges_subscriber = self.create_subscription(
-            LaserScan, robot_prefix + '/scan', self.scan_subscribe_callback, 10)
+            LaserScan, self.robot_prefix + '/scan', self.scan_subscribe_callback, 10)
+
         self.position = [0.0, 0.0, 0.0]
         self.angles = [0.0, 0.0, 0.0]
         self.ranges = [0.0, 0.0, 0.0, 0.0]
         self.range_max = 3.5
-
-        self.tfbr = StaticTransformBroadcaster(self)
-        t_map = TransformStamped()
-        t_map.header.stamp = self.get_clock().now().to_msg()
-        t_map.header.frame_id = 'map'
-        t_map.child_frame_id =robot_prefix +'/odom'
-        t_map.transform.translation.x = 0.0
-        t_map.transform.translation.y = 0.0
-        t_map.transform.translation.z = 0.0
-        self.tfbr.sendTransform(t_map)
-
         self.position_update = False
+        self.last_odom_time = None
 
-        self.map = [-1] * int(GLOBAL_SIZE_X / MAP_RES) * \
-            int(GLOBAL_SIZE_Y / MAP_RES)
-        self.map_publisher = self.create_publisher(OccupancyGrid, robot_prefix + '/map',
-                                                   qos_profile=QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL, history=HistoryPolicy.KEEP_LAST,))
+        self.map = [-1] * (self.map_width * self.map_height)
 
-        self.get_logger().info(f"Simple mapper set for crazyflie " + robot_prefix +
-                               f" using the odom and scan topic")
+        # Keep OccupancyGrid centered in the map frame.
+        self.map_origin_x = -self.map_size_x / 2.0
+        self.map_origin_y = -self.map_size_y / 2.0
+
+        # Initialize map->odom transform later, once startup pose is stable.
+        self.map_initialized = False
+        self.map_ready_since = None
+        self.tfbr = TransformBroadcaster(self)
+        self.tf_translation_x = 0.0
+        self.tf_translation_y = 0.0
+        self.tf_yaw = 0.0
+
+        self.map_publisher = self.create_publisher(
+            OccupancyGrid,
+            self.robot_prefix + '/map',
+            qos_profile=QoSProfile(
+                depth=1,
+                durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                history=HistoryPolicy.KEEP_LAST,
+            ),
+        )
+
+        self.get_logger().info(
+            f"Simple mapper set for {self.robot_prefix}. Map {self.map_size_x:.1f}m x {self.map_size_y:.1f}m @ {self.map_resolution:.2f}m/cell"
+        )
+
+    def publish_map_to_odom_tf(self):
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = 'map'
+        t.child_frame_id = self.robot_prefix + '/odom'
+        t.transform.translation.x = float(self.tf_translation_x)
+        t.transform.translation.y = float(self.tf_translation_y)
+        t.transform.translation.z = 0.0
+
+        q = tf_transformations.quaternion_from_euler(0.0, 0.0, self.tf_yaw)
+        t.transform.rotation.x = float(q[0])
+        t.transform.rotation.y = float(q[1])
+        t.transform.rotation.z = float(q[2])
+        t.transform.rotation.w = float(q[3])
+        self.tfbr.sendTransform(t)
 
     def bresenham_line(self, x0, y0, x1, y1):
-        """
-        Bresenham's line algorithm implementation
-        Returns a list of (x, y) coordinates from (x0, y0) to (x1, y1)
-        """
         points = []
         dx = abs(x1 - x0)
         dy = abs(y1 - y0)
         sx = 1 if x0 < x1 else -1
         sy = 1 if y0 < y1 else -1
         err = dx - dy
-        
+
         x, y = x0, y0
-        
         while True:
             points.append((x, y))
-            
             if x == x1 and y == y1:
                 break
-                
             e2 = 2 * err
             if e2 > -dy:
                 err -= dy
@@ -89,108 +123,198 @@ class SimpleMapperMultiranger(Node):
             if e2 < dx:
                 err += dx
                 y += sy
-                
         return points
+
+    def transform_odom_to_map_xy(self, x_odom, y_odom):
+        cos_yaw = math.cos(self.tf_yaw)
+        sin_yaw = math.sin(self.tf_yaw)
+        x_map = cos_yaw * x_odom - sin_yaw * y_odom + self.tf_translation_x
+        y_map = sin_yaw * x_odom + cos_yaw * y_odom + self.tf_translation_y
+        return x_map, y_map
+
+    def world_to_grid(self, x_map, y_map):
+        mx = int((x_map - self.map_origin_x) / self.map_resolution)
+        my = int((y_map - self.map_origin_y) / self.map_resolution)
+        return mx, my
+
+    def in_bounds(self, mx, my):
+        return 0 <= mx < self.map_width and 0 <= my < self.map_height
+
+    def map_index(self, mx, my):
+        return my * self.map_width + mx
+
+    def ready_to_map(self):
+        if not self.position_update:
+            self.map_ready_since = None
+            return False
+
+        now = self.get_clock().now().nanoseconds * 1e-9
+        odom_fresh = (
+            self.last_odom_time is not None and
+            (now - self.last_odom_time) < 0.2
+        )
+
+        if self.require_fresh_odom and not odom_fresh:
+            self.map_ready_since = None
+            return False
+
+        if self.position[2] < self.min_mapping_height:
+            self.map_ready_since = None
+            return False
+
+        if self.map_initialized:
+            return True
+
+        if self.map_ready_since is None:
+            self.map_ready_since = now
+            return False
+
+        if (now - self.map_ready_since) < self.mapping_start_delay:
+            return False
+
+        # Freeze startup pose and recenter odom into map so startup pose becomes map (0, 0).
+        x0 = float(self.position[0])
+        y0 = float(self.position[1])
+        yaw0 = float(self.angles[2]) if self.recenter_initial_yaw else 0.0
+
+        self.tf_yaw = -yaw0
+        cos_yaw = math.cos(self.tf_yaw)
+        sin_yaw = math.sin(self.tf_yaw)
+        self.tf_translation_x = -(cos_yaw * x0 - sin_yaw * y0)
+        self.tf_translation_y = -(sin_yaw * x0 + cos_yaw * y0)
+
+        self.map = [-1] * (self.map_width * self.map_height)
+        self.map_initialized = True
+        self.publish_map_to_odom_tf()
+
+        self.get_logger().info(
+            'Map initialized. '
+            f'startup odom=({x0:.2f}, {y0:.2f}, {self.position[2]:.2f}), '
+            f'map->odom tx={self.tf_translation_x:.2f}, ty={self.tf_translation_y:.2f}, yaw={self.tf_yaw:.2f}'
+        )
+        return True
 
     def odom_subscribe_callback(self, msg):
         self.position[0] = msg.pose.pose.position.x
         self.position[1] = msg.pose.pose.position.y
         self.position[2] = msg.pose.pose.position.z
+
         q = msg.pose.pose.orientation
         euler = tf_transformations.euler_from_quaternion([q.x, q.y, q.z, q.w])
         self.angles[0] = euler[0]
         self.angles[1] = euler[1]
         self.angles[2] = euler[2]
+
         self.position_update = True
+        self.last_odom_time = self.get_clock().now().nanoseconds * 1e-9
+        self.publish_map_to_odom_tf()
 
     def scan_subscribe_callback(self, msg):
         self.ranges = msg.ranges
         self.range_max = msg.range_max
+
+        if not self.ready_to_map():
+            return
+
         data = self.rotate_and_create_points()
 
-        points_x = []
-        points_y = []
-        #
-        if self.position_update is False:
+        robot_x_map, robot_y_map = self.transform_odom_to_map_xy(self.position[0], self.position[1])
+        robot_mx, robot_my = self.world_to_grid(robot_x_map, robot_y_map)
+        if not self.in_bounds(robot_mx, robot_my):
+            self.get_logger().warn(
+                f'Robot pose fell outside map bounds: mx={robot_mx}, my={robot_my}, '
+                f'x_map={robot_x_map:.2f}, y_map={robot_y_map:.2f}'
+            )
             return
-        for i in range(len(data)):
-            #self.get_logger().info(f"Point {i} {data[i]}")
-            point_x = int((data[i][0] - GLOBAL_SIZE_X / 2.0) / MAP_RES)
-            point_y = int((data[i][1] - GLOBAL_SIZE_Y / 2.0) / MAP_RES)
-            points_x.append(point_x)
-            points_y.append(point_y)
-            position_x_map = int(
-                (self.position[0] - GLOBAL_SIZE_X / 2.0) / MAP_RES)
-            position_y_map = int(
-                (self.position[1] - GLOBAL_SIZE_Y / 2.0) / MAP_RES)
-            for line_x, line_y in self.bresenham_line(position_x_map, position_y_map, point_x, point_y):
-                self.map[line_y * int(GLOBAL_SIZE_X / MAP_RES) + line_x] = 0
-            self.map[point_y * int(GLOBAL_SIZE_X / MAP_RES) + point_x] = 100
 
+        for px_odom, py_odom, _ in data:
+            point_x_map, point_y_map = self.transform_odom_to_map_xy(px_odom, py_odom)
+            point_mx, point_my = self.world_to_grid(point_x_map, point_y_map)
+            if not self.in_bounds(point_mx, point_my):
+                continue
+
+            for line_x, line_y in self.bresenham_line(robot_mx, robot_my, point_mx, point_my):
+                if self.in_bounds(line_x, line_y):
+                    self.map[self.map_index(line_x, line_y)] = 0
+
+            self.map[self.map_index(point_mx, point_my)] = 100
+
+        self.publish_map()
+
+    def publish_map(self):
         msg = OccupancyGrid()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = 'map'
-        msg.info.resolution = MAP_RES
-        msg.info.width = int(GLOBAL_SIZE_X / MAP_RES)
-        msg.info.height = int(GLOBAL_SIZE_Y / MAP_RES)
-        msg.info.origin.position.x = - GLOBAL_SIZE_X / 2.0
-        msg.info.origin.position.y = - GLOBAL_SIZE_Y / 2.0
+        msg.info.resolution = self.map_resolution
+        msg.info.width = self.map_width
+        msg.info.height = self.map_height
+        msg.info.origin.position.x = self.map_origin_x
+        msg.info.origin.position.y = self.map_origin_y
+        msg.info.origin.orientation.w = 1.0
         msg.data = self.map
         self.map_publisher.publish(msg)
 
     def rotate_and_create_points(self):
         data = []
         o = self.position
-        roll = self.angles[0]
-        pitch = self.angles[1]
+
+        # Yaw-only is more robust for a 2D occupancy map.
+        roll = 0.0
+        pitch = 0.0
         yaw = self.angles[2]
+
         r_back = self.ranges[0]
         r_right = self.ranges[1]
         r_front = self.ranges[2]
         r_left = self.ranges[3]
 
-        if (r_left < self.range_max and r_left != 0.0 and math.isinf(r_left) == False):
+        if r_left < self.range_max and r_left != 0.0 and not math.isinf(r_left):
             left = [o[0], o[1] + r_left, o[2]]
             data.append(self.rot(roll, pitch, yaw, o, left))
 
-        if (r_right < self.range_max and r_right != 0.0 and math.isinf(r_right) == False):
+        if r_right < self.range_max and r_right != 0.0 and not math.isinf(r_right):
             right = [o[0], o[1] - r_right, o[2]]
             data.append(self.rot(roll, pitch, yaw, o, right))
 
-        if (r_front < self.range_max and r_front != 0.0 and math.isinf(r_front) == False):
+        if r_front < self.range_max and r_front != 0.0 and not math.isinf(r_front):
             front = [o[0] + r_front, o[1], o[2]]
             data.append(self.rot(roll, pitch, yaw, o, front))
 
-        if (r_back < self.range_max and r_back != 0.0 and math.isinf(r_back) == False):
+        if r_back < self.range_max and r_back != 0.0 and not math.isinf(r_back):
             back = [o[0] - r_back, o[1], o[2]]
             data.append(self.rot(roll, pitch, yaw, o, back))
 
         return data
 
     def rot(self, roll, pitch, yaw, origin, point):
-        cosr = math.cos((roll))
-        cosp = math.cos((pitch))
-        cosy = math.cos((yaw))
+        cosr = math.cos(roll)
+        cosp = math.cos(pitch)
+        cosy = math.cos(yaw)
 
-        sinr = math.sin((roll))
-        sinp = math.sin((pitch))
-        siny = math.sin((yaw))
+        sinr = math.sin(roll)
+        sinp = math.sin(pitch)
+        siny = math.sin(yaw)
 
-        roty = np.array([[cosy, -siny, 0],
-                        [siny, cosy, 0],
-                        [0, 0,    1]])
+        roty = np.array([
+            [cosy, -siny, 0],
+            [siny,  cosy, 0],
+            [0,        0, 1],
+        ])
 
-        rotp = np.array([[cosp, 0, sinp],
-                        [0, 1, 0],
-                        [-sinp, 0, cosp]])
+        rotp = np.array([
+            [ cosp, 0, sinp],
+            [    0, 1,    0],
+            [-sinp, 0, cosp],
+        ])
 
-        rotr = np.array([[1, 0,   0],
-                        [0, cosr, -sinr],
-                        [0, sinr,  cosr]])
+        rotr = np.array([
+            [1,    0,     0],
+            [0, cosr, -sinr],
+            [0, sinr,  cosr],
+        ])
 
-        rotFirst = np.dot(rotr, rotp)
-
-        rot = np.array(np.dot(rotFirst, roty))
+        rot_first = np.dot(rotr, rotp)
+        rot = np.array(np.dot(rot_first, roty))
 
         tmp = np.subtract(point, origin)
         tmp2 = np.dot(rot, tmp)
@@ -198,11 +322,10 @@ class SimpleMapperMultiranger(Node):
 
 
 def main(args=None):
-
     rclpy.init(args=args)
-    simple_mapper_multiranger = SimpleMapperMultiranger()
-    rclpy.spin(simple_mapper_multiranger)
-    rclpy.destroy_node()
+    node = SimpleMapperMultiranger()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 
