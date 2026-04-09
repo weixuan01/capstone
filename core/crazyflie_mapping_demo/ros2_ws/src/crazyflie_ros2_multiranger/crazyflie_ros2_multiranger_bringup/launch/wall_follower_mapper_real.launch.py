@@ -57,7 +57,7 @@ def generate_launch_description():
             {'mapping_start_delay': 3.0},
             {'require_fresh_odom': True},
             {'recenter_initial_yaw': False},
-        ],
+        ]
     )
 
     wall_following = Node(
@@ -80,6 +80,20 @@ def generate_launch_description():
         ],
     )
 
+    aideck_udp_streamer = Node(
+        package='crazyflie',
+        executable='aideck_udp_streamer.py',
+        name='aideck_udp_streamer',
+        output='screen',
+        parameters=[
+            {'deck_ip': '192.168.4.1'},
+            {'deck_port': 5000},
+            {'listen_ip': '0.0.0.0'},
+            {'listen_port': 5001},
+            {'image_topic': '/aideck/image_raw'}
+        ]
+    )
+
     rviz_config_path = os.path.join(
         get_package_share_directory('crazyflie_ros2_multiranger_bringup'),
         'config',
@@ -100,5 +114,6 @@ def generate_launch_description():
         crazyflie_vel_mux,
         simple_mapper,
         wall_following,
+        aideck_udp_streamer,
         rviz
         ])

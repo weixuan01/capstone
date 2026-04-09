@@ -64,7 +64,7 @@ def generate_launch_description():
             {'delay': 5.0},
             {'max_turn_rate': 0.5},
             {'max_forward_speed': 0.3},
-            {'square_size': 1.0}
+            {'square_size': 0.5}
         ]
     )
 
