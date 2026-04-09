@@ -59,7 +59,7 @@ def generate_launch_description():
         name='frontier_exploration',
         output='screen',
         parameters=[
-            {'robot_prefix': 'crazyflie'},
+            {'robot_prefix': 'crazyflie_real'},
             {'use_sim_time': False},
             {'delay': 5.0},
             {'max_turn_rate': 0.7},
