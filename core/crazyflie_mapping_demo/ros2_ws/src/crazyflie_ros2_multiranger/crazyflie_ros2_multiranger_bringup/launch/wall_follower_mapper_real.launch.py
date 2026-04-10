@@ -90,7 +90,19 @@ def generate_launch_description():
             {'deck_port': 5000},
             {'listen_ip': '0.0.0.0'},
             {'listen_port': 5001},
-            {'image_topic': '/aideck/image_raw'}
+            {'image_topic': '/aideck/image_raw'},
+            {'robot_prefix': 'crazyflie_real'},
+            {'start_after_takeoff': True},
+            {'start_height_threshold': 0.24},
+            {'start_stable_delay': 1.0},
+            {'require_fresh_odom': True},
+            {'odom_timeout_sec': 0.3},
+            {'start_retry_seconds': 2.0},
+            {'restart_backoff_sec': 1.0},
+            {'prediction_conf_threshold': 0.99},
+            {'enable_prediction': True},
+            {'publish_mnist_image': True},
+            {'log_fps': True},
         ]
     )
 
@@ -115,5 +127,5 @@ def generate_launch_description():
         simple_mapper,
         wall_following,
         aideck_udp_streamer,
-        rviz
-        ])
+        rviz,
+    ])

@@ -11,6 +11,8 @@ from sensor_msgs.msg import Image
 import onnxruntime as ort
 from ament_index_python.packages import get_package_share_directory
 import os
+from std_msgs.msg import Int32
+from nav_msgs.msg import Odometry
 
 def softmax(x, axis=None):
     x = x - np.max(x, axis=axis, keepdims=True)
@@ -358,6 +360,18 @@ class AiDeckUdpStreamer(Node):
         self.declare_parameter('listen_port', 5001)
         self.declare_parameter('image_topic', '/aideck/image_raw')
         self.declare_parameter('timer_period', 0.01)
+        self.declare_parameter('robot_prefix', 'crazyflie_real')
+        self.declare_parameter('start_after_takeoff', True)
+        self.declare_parameter('start_height_threshold', 0.24)
+        self.declare_parameter('start_stable_delay', 1.0)
+        self.declare_parameter('require_fresh_odom', True)
+        self.declare_parameter('odom_timeout_sec', 0.3)
+        self.declare_parameter('start_retry_seconds', 2.0)
+        self.declare_parameter('restart_backoff_sec', 1.0)
+        self.declare_parameter('prediction_conf_threshold', 0.7)
+        self.declare_parameter('enable_prediction', True)
+        self.declare_parameter('publish_mnist_image', True)
+        self.declare_parameter('log_fps', False)
 
         self.deck_ip = self.get_parameter('deck_ip').value
         self.deck_port = int(self.get_parameter('deck_port').value)
@@ -365,20 +379,36 @@ class AiDeckUdpStreamer(Node):
         self.listen_port = int(self.get_parameter('listen_port').value)
         self.image_topic = self.get_parameter('image_topic').value
         self.timer_period = float(self.get_parameter('timer_period').value)
+        self.robot_prefix = self.get_parameter('robot_prefix').value
+        self.start_after_takeoff = bool(self.get_parameter('start_after_takeoff').value)
+        self.start_height_threshold = float(self.get_parameter('start_height_threshold').value)
+        self.start_stable_delay = float(self.get_parameter('start_stable_delay').value)
+        self.require_fresh_odom = bool(self.get_parameter('require_fresh_odom').value)
+        self.odom_timeout_sec = float(self.get_parameter('odom_timeout_sec').value)
+        self.start_retry_seconds = float(self.get_parameter('start_retry_seconds').value)
+        self.restart_backoff_sec = float(self.get_parameter('restart_backoff_sec').value)
+        self.prediction_conf_threshold = float(self.get_parameter('prediction_conf_threshold').value)
+        self.enable_prediction = bool(self.get_parameter('enable_prediction').value)
+        self.publish_mnist_image = bool(self.get_parameter('publish_mnist_image').value)
+        self.log_fps = bool(self.get_parameter('log_fps').value)
 
-        self.publisher_ = self.create_publisher(Image, self.image_topic, 10) ################## ADDED
+        self.publisher_ = self.create_publisher(Image, self.image_topic, 10)
         self.mnist_publisher_ = self.create_publisher(Image, '/aideck/mnist_input', 10)
+        self.prediction_publisher_ = self.create_publisher(Int32, '/aideck/digit_prediction', 10)
+        self.odom_subscriber = self.create_subscription(
+            Odometry, self.robot_prefix + '/odom', self.odom_callback, 10)
+
+        self.last_published_digit = None
+        self.last_publish_time = 0.0
+        self.publish_cooldown_sec = 1.0
 
         package_dir = get_package_share_directory("crazyflie")
         model_path = os.path.join(package_dir, "models", "mnist_inverted.onnx")
-
         self.get_logger().info(f"Loading model: {model_path}")
-
         self.session = ort.InferenceSession(
             model_path,
             providers=["CPUExecutionProvider"]
         )
-
         self.in_name = self.session.get_inputs()[0].name
         self.out_name = self.session.get_outputs()[0].name
 
@@ -391,81 +421,110 @@ class AiDeckUdpStreamer(Node):
         self.IMG_HEADER_SIZE = 11
 
         self.streams = {}
-
+        self.current_z = 0.0
+        self.last_odom_time = None
+        self.above_height_since = None
+        self.start_gate_latched = not self.start_after_takeoff
+        self.stream_requested = False
+        self.stream_started = False
         self.last_frame_time = None
         self.last_start_sent_time = 0.0
-        self.start_retry_seconds = 2.0
-        self.stream_started = False
+        self.last_restart_attempt_time = 0.0
+        self.last_fps_log_time = 0.0
 
         self.get_logger().info(
-            f'Listening UDP on {self.listen_ip}:{self.listen_port}, '
-            f'sending start to {self.deck_ip}:{self.deck_port}'
+            f'Listening UDP on {self.listen_ip}:{self.listen_port}; deck target {self.deck_ip}:{self.deck_port}'
         )
 
-        self.send_start_packet()
+        if self.start_gate_latched:
+            self.request_stream_start('startup without takeoff gate')
+        else:
+            self.get_logger().info(
+                'Waiting for takeoff gate before starting AiDeck stream: '
+                f'z >= {self.start_height_threshold:.2f}m for {self.start_stable_delay:.1f}s'
+            )
 
         self.timer = self.create_timer(self.timer_period, self.receive_callback)
+        self.control_timer = self.create_timer(0.1, self.stream_control_callback)
         self.retry_timer = self.create_timer(0.5, self.retry_stream_start)
+
+    def odom_callback(self, msg):
+        self.current_z = float(msg.pose.pose.position.z)
+        self.last_odom_time = time.time()
+
+        if self.current_z >= self.start_height_threshold:
+            if self.above_height_since is None:
+                self.above_height_since = self.last_odom_time
+        else:
+            self.above_height_since = None
+
+    def clear_stream_state(self):
+        self.streams = {}
+        self.stream_started = False
+        self.last_frame_time = None
+
+    def publish_prediction(self, pred):
+        now = time.time()
+        if pred == self.last_published_digit and (now - self.last_publish_time) < self.publish_cooldown_sec:
+            return
+        msg = Int32()
+        msg.data = int(pred)
+        self.prediction_publisher_.publish(msg)
+        self.last_published_digit = pred
+        self.last_publish_time = now
 
     def send_start_packet(self):
         try:
             self.sock.sendto(b'FER', (self.deck_ip, self.deck_port))
             self.last_start_sent_time = time.time()
-            self.get_logger().info(
-                f'Sent start packet to {self.deck_ip}:{self.deck_port}'
-            )
+            self.get_logger().info(f'Sent start packet to {self.deck_ip}:{self.deck_port}')
         except Exception as e:
             self.get_logger().error(f'Failed to send start packet: {e}')
 
-    def retry_stream_start(self):
+    def request_stream_start(self, reason):
         now = time.time()
+        if now - self.last_restart_attempt_time < self.restart_backoff_sec:
+            return
+        self.last_restart_attempt_time = now
+        self.clear_stream_state()
+        self.stream_requested = True
+        self.get_logger().info(f'Requesting AiDeck stream start: {reason}')
+        self.send_start_packet()
 
-        # If we have never received a frame, keep retrying every few seconds
-        if not self.stream_started:
-            if now - self.last_start_sent_time >= self.start_retry_seconds:
-                self.get_logger().warn('No frames yet, resending start packet')
-                self.send_start_packet()
+    def stream_control_callback(self):
+        if self.start_gate_latched:
             return
 
-        # If stream started before but has gone silent, also retry
-        if self.last_frame_time is not None:
-            if now - self.last_frame_time >= self.start_retry_seconds:
-                self.get_logger().warn('Stream timeout, resending start packet')
-                self.stream_started = False
-                self.send_start_packet()
+        now = time.time()
+        odom_fresh = (
+            self.last_odom_time is not None and
+            (now - self.last_odom_time) <= self.odom_timeout_sec
+        )
+        if self.require_fresh_odom and not odom_fresh:
+            return
+        if self.above_height_since is None:
+            return
+        if (now - self.above_height_since) < self.start_stable_delay:
+            return
 
-    # def publish_cv_image(self, decoded: np.ndarray):
-    #     msg = Image()
-    #     msg.header.stamp = self.get_clock().now().to_msg()
-    #     msg.header.frame_id = 'aideck_camera'
+        self.start_gate_latched = True
+        self.request_stream_start('takeoff gate satisfied')
 
-    #     if decoded.ndim == 2:
-    #         h, w = decoded.shape
-    #         msg.height = h
-    #         msg.width = w
-    #         msg.encoding = 'mono8'
-    #         msg.step = w
-    #         msg.data = decoded.tobytes()
-    #     else:
-    #         h, w, c = decoded.shape
-    #         if c == 3:
-    #             msg.height = h
-    #             msg.width = w
-    #             msg.encoding = 'bgr8'
-    #             msg.step = w * 3
-    #             msg.data = decoded.tobytes()
-    #         elif c == 4:
-    #             msg.height = h
-    #             msg.width = w
-    #             msg.encoding = 'bgra8'
-    #             msg.step = w * 4
-    #             msg.data = decoded.tobytes()
-    #         else:
-    #             self.get_logger().warn(f'Unsupported channel count: {c}')
-    #             return
+    def retry_stream_start(self):
+        if not self.stream_requested:
+            return
 
-    #     msg.is_bigendian = 0
-    #     self.publisher_.publish(msg)
+        now = time.time()
+
+        if not self.stream_started:
+            if now - self.last_start_sent_time >= self.start_retry_seconds:
+                self.get_logger().warn('No frames yet, retrying AiDeck stream start')
+                self.request_stream_start('no frames received')
+            return
+
+        if self.last_frame_time is not None and (now - self.last_frame_time) >= self.start_retry_seconds:
+            self.get_logger().warn('Stream timeout detected, restarting AiDeck stream')
+            self.request_stream_start('stream timeout')
 
     def publish_cv_image(self, decoded: np.ndarray, publisher=None, frame_id='aideck_camera'):
         if publisher is None:
@@ -504,6 +563,9 @@ class AiDeckUdpStreamer(Node):
         publisher.publish(msg)
 
     def receive_callback(self):
+        if not self.stream_requested:
+            return
+
         while True:
             try:
                 data, addr = self.sock.recvfrom(2048)
@@ -545,65 +607,24 @@ class AiDeckUdpStreamer(Node):
 
                 if stream['expected_size'] is not None and len(stream['buffer']) >= stream['expected_size']:
                     now = time.time()
-                    
                     first_frame = not self.stream_started
                     self.stream_started = True
                     self.last_frame_time = now
-                    
+
                     if first_frame:
                         self.get_logger().info('First frame received')
 
-                    if stream['last_frame_time'] is not None:
+                    if self.log_fps and stream['last_frame_time'] is not None and (now - self.last_fps_log_time) >= 1.0:
                         delta = now - stream['last_frame_time']
                         fps = 1.0 / delta if delta > 0 else 0.0
                         self.get_logger().info(f'UDP FPS: {fps:.2f}')
+                        self.last_fps_log_time = now
                     stream['last_frame_time'] = now
 
                     try:
                         np_data = np.frombuffer(stream['buffer'], np.uint8)
-                        # decoded = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
-                        # if decoded is not None:
-                        #     self.publish_cv_image(decoded)
-                        # else:
-                        #     self.get_logger().warn('Failed to decode image')
-
-                        # decoded = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
-                        # if decoded is not None:
-                        #     # self.publish_cv_image(decoded)
-                        #     self.publish_cv_image(decoded, self.publisher_, 'aideck_camera')
-
-                        #     # make sure image is grayscale before digit extraction
-                        #     if decoded.ndim == 3:
-                        #         gray = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
-                        #     else:
-                        #         gray = decoded
-
-                        #     mnist_img = extract_mnist_digit(gray)
-
-                        #     if mnist_img is not None:
-                        #         self.publish_cv_image(mnist_img, self.mnist_publisher_, 'aideck_mnist')
-                        #     else:
-                        #         blank = np.ones((28, 28), dtype=np.uint8) * 255
-                        #         self.publish_cv_image(blank, self.mnist_publisher_, 'aideck_mnist')
-
-                        #     # debug windows
-                        #     cv2.imshow("camera", gray)
-
-                        #     if mnist_img is not None:
-                        #         cv2.imshow("mnist_input", mnist_img)
-                        #     else:
-                        #         blank = np.ones((28, 28), dtype=np.uint8) * 255
-                        #         cv2.imshow("mnist_input", blank)
-
-                        #     cv2.waitKey(1)
-
-                        # else:
-                        #     self.get_logger().warn('Failed to decode image')
-
                         decoded = cv2.imdecode(np_data, cv2.IMREAD_UNCHANGED)
                         if decoded is not None:
-
-                            # Convert to grayscale
                             if decoded.ndim == 3:
                                 gray = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
                                 display_img = decoded.copy()
@@ -611,38 +632,35 @@ class AiDeckUdpStreamer(Node):
                                 gray = decoded
                                 display_img = cv2.cvtColor(decoded, cv2.COLOR_GRAY2BGR)
 
-                            # Extract MNIST-style image
                             mnist_img, paper_quad, debug_crop, digit_box, mode = extract_mnist_digit(gray)
-
-                            overlay_text = "Digit: None"
+                            overlay_text = 'Digit: None'
 
                             if paper_quad is not None:
                                 pts = paper_quad.astype(np.int32).reshape((-1, 1, 2))
                                 cv2.polylines(display_img, [pts], True, (0, 255, 0), 2)
-                            
+
                             if digit_box is not None:
                                 x, y, w_box, h_box = digit_box
                                 cv2.rectangle(display_img, (x, y), (x + w_box, y + h_box), (255, 0, 0), 2)
 
                             if mnist_img is not None:
-                                self.publish_cv_image(mnist_img, self.mnist_publisher_, "aideck_mnist")
+                                if self.publish_mnist_image:
+                                    self.publish_cv_image(mnist_img, self.mnist_publisher_, 'aideck_mnist')
 
-                                x = mnist_img.astype(np.float32) / 255.0
-                                x = x.reshape(1, 1, 28, 28)
-
-                                out = self.session.run([self.out_name], {self.in_name: x})[0]
-
-                                probs = softmax(out, axis=1)[0]
-                                pred = int(np.argmax(probs))
-                                conf = float(probs[pred])
-
-                                overlay_text = f"Digit: {pred}  Conf: {conf:.2f}"
-                                self.get_logger().info(f"Predicted digit: {pred}, confidence: {conf:.2f}")
-                            else:
+                                if self.enable_prediction:
+                                    x = mnist_img.astype(np.float32) / 255.0
+                                    x = x.reshape(1, 1, 28, 28)
+                                    out = self.session.run([self.out_name], {self.in_name: x})[0]
+                                    probs = softmax(out, axis=1)[0]
+                                    pred = int(np.argmax(probs))
+                                    conf = float(probs[pred])
+                                    overlay_text = f'Digit: {pred}  Conf: {conf:.2f}'
+                                    if conf > self.prediction_conf_threshold:
+                                        self.publish_prediction(pred)
+                            elif self.publish_mnist_image:
                                 blank = np.ones((28, 28), dtype=np.uint8) * 255
-                                self.publish_cv_image(blank, self.mnist_publisher_, "aideck_mnist")
+                                self.publish_cv_image(blank, self.mnist_publisher_, 'aideck_mnist')
 
-                            # Overlay text on camera image
                             cv2.putText(
                                 display_img,
                                 overlay_text,
@@ -653,33 +671,9 @@ class AiDeckUdpStreamer(Node):
                                 2,
                                 cv2.LINE_AA
                             )
-
-                            # Publish overlay image on /aideck/image_raw
-                            self.publish_cv_image(display_img, self.publisher_, "aideck_camera")
-
-                            # # Debug windows
-                            # cv2.imshow("camera", display_img)
-
-                            # if debug_crop is not None:
-                            #     debug_big = cv2.resize(debug_crop, (280, 280), interpolation=cv2.INTER_NEAREST)
-                            #     cv2.imshow("warped_paper", debug_big)
-                            # else:
-                            #     blank_warp = np.ones((280, 280), dtype=np.uint8) * 255
-                            #     cv2.putText(blank_warp, "No crop", (70, 140),
-                            #                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, 0, 2, cv2.LINE_AA)
-                            #     cv2.imshow("warped_paper", blank_warp)
-
-                            # if mnist_img is not None:
-                            #     mnist_big = cv2.resize(mnist_img, (280, 280), interpolation=cv2.INTER_NEAREST)
-                            #     cv2.imshow("mnist_input", mnist_big)
-                            # else:
-                            #     blank = np.ones((280, 280), dtype=np.uint8) * 255
-                            #     cv2.imshow("mnist_input", blank)
-
-                            # cv2.waitKey(1)
-
+                            self.publish_cv_image(display_img, self.publisher_, 'aideck_camera')
                         else:
-                            self.get_logger().warn("Failed to decode image")
+                            self.get_logger().warn('Failed to decode image')
 
                     except Exception as e:
                         self.get_logger().error(f'Decode error: {e}')
