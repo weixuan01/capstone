@@ -26,6 +26,7 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger
 from visualization_msgs.msg import Marker, MarkerArray
+from tf2_ros import Buffer, TransformListener, TransformException
 
 import tf_transformations
 import math
@@ -39,10 +40,17 @@ GLOBAL_SIZE_X = 20.0
 GLOBAL_SIZE_Y = 20.0
 MAP_RES       = 0.1
 
-# ── Flight parameters ─────────────────────────────────────────────────────────
-TAKEOFF_HEIGHT         = 0.0005
-TAKEOFF_DELAY          = 3.0
-CRUISE_SPEED           = 0.3 #0.3
+# ── Flight / visualization defaults ─────────────────────────────────────────
+DEFAULT_DELAY               = 5.0
+DEFAULT_TAKEOFF_MODE        = 'trigger'
+DEFAULT_TAKEOFF_READY_TIME  = 1.0
+DEFAULT_TAKEOFF_SPEED       = 0.5
+DEFAULT_TAKEOFF_HEIGHT      = 0.55
+DEFAULT_TAKEOFF_TOLERANCE   = 0.03
+DEFAULT_TAKEOFF_TIMEOUT     = 6.0
+MARKER_Z                    = 0.10
+
+CRUISE_SPEED           = 0.3
 MAX_TURN_RATE          = 0.2
 OBSTACLE_DIST          = 0.4   # outer detection radius: trigger replan when front wall within this distance
 GOAL_REACHED_DIST      = 0.2   # shared threshold for waypoints, final goal, and home arrival
@@ -117,6 +125,10 @@ COVERAGE_MIN_GAIN  = 0.15
 REACHABILITY_STRIDE         = 3
 REACHABILITY_CHECK_INTERVAL = 3.0
 
+# ── Planner robustness / blacklist ───────────────────────────────────────────
+FAILED_GOAL_BUCKET_SIZE    = 0.5   # m, coarse bucket so the same bad area is not retried immediately
+POSE_FREE_SEARCH_RADIUS    = 4     # cells, search radius for snapping start/goal into nearby free space
+MIN_ASTAR_INFLATION_CELLS  = 0     # final fallback when sparse maps make inflation 1 still too strict
 
 
 class State(Enum):
@@ -148,15 +160,47 @@ class Safety(Enum):
 class FrontierExplorationMultiranger(Node):
 
     def __init__(self):
-        super().__init__('simple_mapper_multiranger')
+        super().__init__('frontier_exploration_multiranger')
 
-        self.declare_parameter('robot_prefix', '/crazyflie')
+        self.declare_parameter('robot_prefix', 'crazyflie')
         robot_prefix = self.get_parameter('robot_prefix').value
+        self.robot_prefix = robot_prefix
+
+        self.declare_parameter('delay', DEFAULT_DELAY)
+        self.delay = float(self.get_parameter('delay').value)
+
+        self.declare_parameter('invert_yaw_command', False)
+        self.invert_yaw_command = bool(self.get_parameter('invert_yaw_command').value)
+
+        # trigger: delayed one-shot positive-z command, then silence during startup.
+        #          This matches the simulator/control_services and real/vel_mux behavior.
+        # direct:  continuous positive-z command until odom height is reached.
+        self.declare_parameter('takeoff_mode', DEFAULT_TAKEOFF_MODE)
+        self.takeoff_mode = str(self.get_parameter('takeoff_mode').value).strip().lower()
+
+        self.declare_parameter('takeoff_ready_time', DEFAULT_TAKEOFF_READY_TIME)
+        self.takeoff_ready_time = float(self.get_parameter('takeoff_ready_time').value)
+
+        self.declare_parameter('takeoff_speed', DEFAULT_TAKEOFF_SPEED)
+        self.takeoff_speed = float(self.get_parameter('takeoff_speed').value)
+
+        self.declare_parameter('takeoff_height', DEFAULT_TAKEOFF_HEIGHT)
+        self.takeoff_height = float(self.get_parameter('takeoff_height').value)
+
+        self.declare_parameter('takeoff_height_tolerance', DEFAULT_TAKEOFF_TOLERANCE)
+        self.takeoff_height_tolerance = float(self.get_parameter('takeoff_height_tolerance').value)
+
+        self.declare_parameter('takeoff_timeout', DEFAULT_TAKEOFF_TIMEOUT)
+        self.takeoff_timeout = float(self.get_parameter('takeoff_timeout').value)
 
         # ── Internal state ────────────────────────────────────────────────────
         self.state    = State.TAKEOFF
-        self.position = [0.0, 0.0, 0.0]
-        self.angles   = [0.0, 0.0, 0.0]
+        self.position = [0.0, 0.0, 0.0]       # active planning/marker pose in map frame
+        self.angles   = [0.0, 0.0, 0.0]       # active planning yaw in map frame
+        self.position_odom = [0.0, 0.0, 0.0]  # raw odom pose from crazyflie
+        self.angles_odom   = [0.0, 0.0, 0.0]
+        self.pose_in_map_ready = False
+        self.last_tf_error_time = 0.0
         self.ranges   = [0.0, 0.0, 0.0, 0.0]   # back, right, front, left
 
         self.map_data   = None   # [10] numpy int8
@@ -188,6 +232,7 @@ class FrontierExplorationMultiranger(Node):
 
         self.visited_counts = {}
         self.recent_goals   = deque(maxlen=RECENT_GOAL_MEMORY)
+        self.failed_goal_keys = set()
 
         self.scanned_cells = set()                          # [12]
         self.last_reachability_time = 0.0                   # [25]
@@ -202,6 +247,15 @@ class FrontierExplorationMultiranger(Node):
         self.stuck_events_for_goal = 0
         self.replan_count_for_goal = 0
 
+        # ── Takeoff / startup gating ──────────────────────────────────────────
+        self.last_odom_time = None
+        self.ready_since = None
+        self.takeoff_start_time = None
+        self.takeoff_trigger_sent = False
+        self.takeoff_finished = False
+        self.wait_for_start = True
+        self.start_clock = None
+
         # ── Timer / logging ───────────────────────────────────────────────────
         self.exploration_start_time = None
         self.last_status_log_time   = 0.0
@@ -209,6 +263,9 @@ class FrontierExplorationMultiranger(Node):
 
         self.position_received = False
         self.map_received      = False
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self, spin_thread=False)
 
         # ── ROS subscribers ───────────────────────────────────────────────────
         self.create_subscription(
@@ -234,9 +291,10 @@ class FrontierExplorationMultiranger(Node):
             Trigger, robot_prefix + '/stop_exploration', self.stop_callback)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
-        self._publish_vel(z=TAKEOFF_HEIGHT)
-        self.start_time = self.get_clock().now().nanoseconds * 1e-9
-        self._info(f'Explorer started. prefix={robot_prefix}')
+        self._info(
+            f'Explorer started. prefix={robot_prefix}; '
+            f'takeoff_mode={self.takeoff_mode}, delay={self.delay:.1f}s'
+        )
 
     # ══════════════════════════════════════════════════════════════════════════
     # Logging helpers — prepend current state to every message so the state
@@ -253,29 +311,238 @@ class FrontierExplorationMultiranger(Node):
     def _err(self, msg):
         self.get_logger().error(f'[{self.state.name}] {msg}')
 
+    def _goal_key(self, wx, wy):
+        return (
+            int(round(float(wx) / FAILED_GOAL_BUCKET_SIZE)),
+            int(round(float(wy) / FAILED_GOAL_BUCKET_SIZE)),
+        )
+
+    def _goal_is_blacklisted(self, wx, wy):
+        return self._goal_key(wx, wy) in self.failed_goal_keys
+
+    def _blacklist_goal(self, wx, wy, reason=''):
+        key = self._goal_key(wx, wy)
+        self.failed_goal_keys.add(key)
+        suffix = f' ({reason})' if reason else ''
+        self._warn(
+            f'Blacklisting frontier area around ({wx:.2f},{wy:.2f}){suffix}.'
+        )
+
+    def _clear_failed_goals(self, reason=''):
+        if self.failed_goal_keys:
+            self.failed_goal_keys.clear()
+            if reason:
+                self._info(f'Cleared failed-goal blacklist ({reason}).')
+
+    def _update_pose_in_map_from_tf(self):
+        if not self.map_received:
+            self.position = self.position_odom.copy()
+            self.angles = self.angles_odom.copy()
+            self.pose_in_map_ready = False
+            return False
+
+        try:
+            tf_msg = self.tf_buffer.lookup_transform(
+                'map',
+                f'{self.robot_prefix}/odom',
+                rclpy.time.Time(),
+            )
+            tx = float(tf_msg.transform.translation.x)
+            ty = float(tf_msg.transform.translation.y)
+            q = tf_msg.transform.rotation
+            _, _, tf_yaw = tf_transformations.euler_from_quaternion(
+                [q.x, q.y, q.z, q.w]
+            )
+
+            xo, yo = self.position_odom[0], self.position_odom[1]
+            cos_yaw = math.cos(tf_yaw)
+            sin_yaw = math.sin(tf_yaw)
+
+            self.position[0] = cos_yaw * xo - sin_yaw * yo + tx
+            self.position[1] = sin_yaw * xo + cos_yaw * yo + ty
+            self.position[2] = self.position_odom[2]
+
+            self.angles[0] = self.angles_odom[0]
+            self.angles[1] = self.angles_odom[1]
+            self.angles[2] = self._wrap_angle(self.angles_odom[2] + tf_yaw)
+
+            self.pose_in_map_ready = True
+            return True
+        except TransformException as exc:
+            self.position = self.position_odom.copy()
+            self.angles = self.angles_odom.copy()
+            self.pose_in_map_ready = False
+            now = self._now()
+            if (now - self.last_tf_error_time) > 1.0:
+                self._warn(f'Waiting for map->odom transform: {exc}')
+                self.last_tf_error_time = now
+            return False
+
+    def _nearest_free_cell(self, row, col, max_radius=POSE_FREE_SEARCH_RADIUS):
+        if self.map_data is None:
+            return None
+
+        H, W = self.map_height, self.map_width
+        if 0 <= row < H and 0 <= col < W and self.map_data[row * W + col] == 0:
+            return (row, col)
+
+        for radius in range(1, max_radius + 1):
+            for dr in range(-radius, radius + 1):
+                for dc in range(-radius, radius + 1):
+                    if abs(dr) != radius and abs(dc) != radius:
+                        continue
+                    nr, nc = row + dr, col + dc
+                    if 0 <= nr < H and 0 <= nc < W and self.map_data[nr * W + nc] == 0:
+                        return (nr, nc)
+        return None
+
+    def _get_reachable_free_cells(self):
+        if self.map_data is None or not self.pose_in_map_ready:
+            return set()
+
+        H, W = self.map_height, self.map_width
+        sr, sc = self._world_to_grid(self.position[0], self.position[1])
+        sr = max(0, min(H - 1, sr))
+        sc = max(0, min(W - 1, sc))
+
+        start = self._nearest_free_cell(sr, sc)
+        if start is None:
+            return set()
+
+        visited = {start}
+        queue = deque([start])
+        dirs8 = [
+            (-1, 0), (1, 0), (0, -1), (0, 1),
+            (-1, -1), (-1, 1), (1, -1), (1, 1),
+        ]
+
+        while queue:
+            row, col = queue.popleft()
+            for dr, dc in dirs8:
+                nr, nc = row + dr, col + dc
+                if not (0 <= nr < H and 0 <= nc < W):
+                    continue
+                if (nr, nc) in visited:
+                    continue
+                if self.map_data[nr * W + nc] != 0:
+                    continue
+                visited.add((nr, nc))
+                queue.append((nr, nc))
+
+        return visited
+
+    def _start_spin_refresh(self, now, reason):
+        self._info(reason)
+        self.spin_start_time = now
+        self.spin_start_yaw = self.angles[2]
+        self.spin_total_rotation = 0.0
+        self._last_spin_yaw = self.angles[2]
+        self.state = State.SPINNING
+
+    def _now(self):
+        return self.get_clock().now().nanoseconds * 1e-9
+
+    def _odom_is_fresh(self, time_now):
+        return (
+            self.position_received
+            and self.last_odom_time is not None
+            and (time_now - self.last_odom_time) < 0.2
+        )
+
+    def _takeoff_height_reached(self):
+        return self.position[2] >= (self.takeoff_height - self.takeoff_height_tolerance)
+
+    def _publish_takeoff_twist(self):
+        self._publish_vel(z=self.takeoff_speed)
+
+    def _handle_takeoff(self, time_now):
+        if not self._odom_is_fresh(time_now):
+            self.ready_since = None
+            return False
+
+        if self.ready_since is None:
+            self.ready_since = time_now
+            return False
+
+        if (time_now - self.ready_since) < self.takeoff_ready_time:
+            return False
+
+        if self.takeoff_start_time is None:
+            self.takeoff_start_time = time_now
+
+        # For simulator control_services and real vel_mux, a delayed one-shot
+        # positive-z trigger is enough. Do NOT publish startup zero twists after it,
+        # otherwise the simulator can lose the takeoff latch before it sets is_flying.
+        if self.takeoff_mode == 'trigger':
+            if not self.takeoff_trigger_sent:
+                self._info('Estimator ready, sending delayed one-shot takeoff trigger')
+                self._publish_takeoff_twist()
+                self.takeoff_trigger_sent = True
+                self.takeoff_finished = True
+                self.start_clock = time_now
+                return True
+            return False
+
+        if self.takeoff_mode == 'direct':
+            if self.takeoff_start_time == time_now:
+                self._info('Estimator ready, starting direct takeoff')
+            self._publish_takeoff_twist()
+        else:
+            self._warn(
+                f"Unknown takeoff_mode '{self.takeoff_mode}', falling back to trigger"
+            )
+            self.takeoff_mode = 'trigger'
+            if not self.takeoff_trigger_sent:
+                self._publish_takeoff_twist()
+                self.takeoff_trigger_sent = True
+                self.takeoff_finished = True
+                self.start_clock = time_now
+                return True
+
+        reached_altitude = self._takeoff_height_reached()
+        timed_out = (time_now - self.takeoff_start_time) >= self.takeoff_timeout
+
+        if reached_altitude or timed_out:
+            # In direct mode, it is safe to publish a zero hold command.
+            self._publish_vel()
+
+            reason = 'height reached' if reached_altitude else 'timeout reached'
+            self._info(
+                f'Takeoff phase complete ({reason}), z={self.position[2]:.2f} m'
+            )
+
+            self.takeoff_finished = True
+            self.start_clock = time_now
+            return True
+
+        return False
+
     # ══════════════════════════════════════════════════════════════════════════
     # ROS callbacks
     # ══════════════════════════════════════════════════════════════════════════
 
     def odom_callback(self, msg):
-        self.position[0] = msg.pose.pose.position.x
-        self.position[1] = msg.pose.pose.position.y
-        self.position[2] = msg.pose.pose.position.z
+        self.position_odom[0] = msg.pose.pose.position.x
+        self.position_odom[1] = msg.pose.pose.position.y
+        self.position_odom[2] = msg.pose.pose.position.z
         q = msg.pose.pose.orientation
-        self.angles = list(tf_transformations.euler_from_quaternion(
+        self.angles_odom = list(tf_transformations.euler_from_quaternion(
             [q.x, q.y, q.z, q.w]))
+
+        now = self._now()
+        self.last_odom_time = now
+        self._update_pose_in_map_from_tf()
 
         if not self.position_received:
             self.position_received = True
             self.last_progress_pos = (self.position[0], self.position[1])
-            now = self.get_clock().now().nanoseconds * 1e-9
             self.last_progress_time = now
-           
 
-        if self.map_received:
+        if self.map_received and self.pose_in_map_ready:
             row, col = self._world_to_grid(self.position[0], self.position[1])
-            self._mark_visited(row, col)
-            self._update_scan_coverage(row, col)
+            if 0 <= row < self.map_height and 0 <= col < self.map_width:
+                self._mark_visited(row, col)
+                self._update_scan_coverage(row, col)
 
     def scan_callback(self, msg):
         self.ranges = list(msg.ranges)
@@ -299,12 +566,14 @@ class FrontierExplorationMultiranger(Node):
         self.map_origin = [msg.info.origin.position.x,
                            msg.info.origin.position.y]
         self.map_received = True
+        self._update_pose_in_map_from_tf()
 
     def stop_callback(self, request, response):
         self._info('Stop requested — landing now')
         self.timer.cancel()
         self._publish_vel(z=-0.2)
         response.success = True
+        response.message = 'Exploration stopped'
         return response
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -313,7 +582,7 @@ class FrontierExplorationMultiranger(Node):
 
     def timer_callback(self):
         try:
-            now = self.get_clock().now().nanoseconds * 1e-9
+            now = self._now()
             self._state_machine(now)
         except Exception as e:
             import traceback
@@ -327,16 +596,39 @@ class FrontierExplorationMultiranger(Node):
 
         # ── TAKEOFF ───────────────────────────────────────────────────────────
         if self.state == State.TAKEOFF:
-            self._publish_vel(z=TAKEOFF_HEIGHT)
-            if now - self.start_time > TAKEOFF_DELAY:
-                self.start_pos         = [self.position[0], self.position[1]]
-                self._info( f'Home captured: ' f'({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
-                self._info(  'Takeoff complete. Rotating 100° to build initial map before exploring.')
-                self.spin_start_time     = now
-                self.spin_start_yaw      = self.angles[2]
-                self.spin_total_rotation = 0.0
-                self._last_spin_yaw      = self.angles[2]
-                self.state = State.SPINNING
+            # Phase 1: wait for odometry and complete takeoff.
+            if not self.takeoff_finished:
+                self._handle_takeoff(now)
+                return
+
+            # Phase 2: settle before starting the initial scan.
+            if self.wait_for_start:
+                # Important: stay silent in trigger mode so the upstream control node
+                # keeps its internally latched takeoff/hover state.
+                if self.takeoff_mode == 'direct':
+                    self._publish_vel()
+
+                if (now - self.start_clock) > self.delay:
+                    if not self.map_received or not self.pose_in_map_ready:
+                        self._info(
+                            'Takeoff complete, waiting for mapper initialization and map-frame pose.'
+                        )
+                        return
+
+                    self.start_pos = [self.position[0], self.position[1]]
+                    self._info(
+                        f'Home captured in map frame: ({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})'
+                    )
+                    self._info(
+                        'Takeoff complete. Rotating 100° to build initial map before exploring.'
+                    )
+                    self.spin_start_time = now
+                    self.spin_start_yaw = self.angles[2]
+                    self.spin_total_rotation = 0.0
+                    self._last_spin_yaw = self.angles[2]
+                    self.wait_for_start = False
+                    self.state = State.SPINNING
+                return
 
         # ── SPINNING ──────────────────────────────────────────────────────────
         elif self.state == State.SPINNING:
@@ -358,8 +650,8 @@ class FrontierExplorationMultiranger(Node):
         elif self.state == State.FIND_FRONTIER:
             self._publish_vel(y=self._get_wall_correction())
 
-            if not self.map_received or not self.position_received:
-                self._info('Waiting for map and position data from sensors...')
+            if not self.map_received or not self.position_received or not self.pose_in_map_ready:
+                self._info('Waiting for map, position, and map-frame pose data from sensors...')
                 return
 
             # ── Record junction if multiple directions visible [22] ────────────
@@ -436,24 +728,18 @@ class FrontierExplorationMultiranger(Node):
             self._plan_path_to_goal()
             if not self.waypoints:
                 self._publish_failed_goal_marker(self.goal[0], self.goal[1])
-                self.no_path_failures += 1
+                self._blacklist_goal(
+                    self.goal[0],
+                    self.goal[1],
+                    reason='no A* path with the current map',
+                )
                 self._warn(
                     f'Could not find a path to ({self.goal[0]:.2f},{self.goal[1]:.2f}). '
-                    f'Choosing a new frontier. '
-                    f'(no_path_failures={self.no_path_failures}/{len(clusters)})')
+                    'Blacklisted this frontier area and trying another one.'
+                )
                 self.recent_goals.append(self.goal)
                 self.goal = self.goal_score = None
-                # If every available frontier has failed A*, there is nothing
-                # left to navigate to — transition to DONE rather than looping.
-                if self.no_path_failures >= len(clusters):
-                    elapsed = self._elapsed_exploration_time(now)
-                    self._warn(
-                        f'All {len(clusters)} frontier(s) are unreachable via A*. '
-                        f't={elapsed:.1f}s → going home.')
-                    self.no_path_failures = 0
-                    self.state = State.DONE
-                else:
-                    self.state = State.FIND_FRONTIER
+                self.state = State.FIND_FRONTIER
             else:
                 self.no_path_failures = 0
                 self._info(
@@ -506,6 +792,7 @@ class FrontierExplorationMultiranger(Node):
                     self._info('Home reached — landing.')
                     self.state = State.LANDING
                 else:
+                    self._clear_failed_goals('successful frontier reached')
                     self._info('Goal reached — spinning 100° to scan area')
                     self.spin_start_yaw      = self.angles[2]
                     self.spin_total_rotation = 0.0
@@ -523,6 +810,7 @@ class FrontierExplorationMultiranger(Node):
                     self._info('Home reached — landing.')
                     self.state = State.LANDING
                 else:
+                    self._clear_failed_goals('successful frontier reached')
                     self._info('Goal reached — spinning 100° to scan area')
                     self.spin_start_yaw      = self.angles[2]
                     self.spin_total_rotation = 0.0
@@ -694,6 +982,11 @@ class FrontierExplorationMultiranger(Node):
                 f'REPLAN: failed — no path to '
                 f'({self.goal[0]:.2f},{self.goal[1]:.2f}). '
                 f'Abandoning goal → FIND_FRONTIER.')
+            self._blacklist_goal(
+                self.goal[0],
+                self.goal[1],
+                reason='replan failed',
+            )
             self.no_path_failures += 1
             self._abandon_current_goal()
             self.state = State.FIND_FRONTIER
@@ -719,10 +1012,12 @@ class FrontierExplorationMultiranger(Node):
 
         self.last_reachability_time = now
         if self._has_reachable_unknown():
-            self._warn(
-                'No clusters but BFS finds reachable unknowns — '
-                'hovering')
-            self._publish_vel(y=self._get_wall_correction())
+            self.zero_cluster_count = 0
+            self._clear_failed_goals('reachable unknown still exists')
+            self._start_spin_refresh(
+                now,
+                'No reachable frontier clusters right now, but BFS still sees reachable unknowns — rescanning.',
+            )
         else:
             elapsed = self._elapsed_exploration_time(now)
             self._info(
@@ -734,43 +1029,21 @@ class FrontierExplorationMultiranger(Node):
     # ══════════════════════════════════════════════════════════════════════════
 
     def _has_reachable_unknown(self):
-        if self.map_data is None:
+        if self.map_data is None or not self.pose_in_map_ready:
             return False
+
+        reachable = self._get_reachable_free_cells()
+        if not reachable:
+            return False
+
         W, H = self.map_width, self.map_height
-        s    = REACHABILITY_STRIDE
-        sr, sc = self._world_to_grid(self.position[0], self.position[1])
-        sr = max(0, min(H-1, round(sr/s)*s))
-        sc = max(0, min(W-1, round(sc/s)*s))
-        if self.map_data[sr*W+sc] != 0:
-            found = False
-            for dsr in range(-s, s+1, s):
-                for dsc in range(-s, s+1, s):
-                    nr, nc = sr+dsr, sc+dsc
-                    if 0 <= nr < H and 0 <= nc < W:
-                        if self.map_data[nr*W+nc] == 0:
-                            sr, sc = nr, nc; found = True; break
-                if found:
-                    break
-            if not found:
-                return False
-        visited = {(sr, sc)}
-        queue   = deque([(sr, sc)])
-        dirs4   = [(-s,0),(s,0),(0,-s),(0,s)]
-        while queue:
-            row, col = queue.popleft()
+        for row, col in reachable:
             for dr in range(-1, 2):
                 for dc in range(-1, 2):
-                    nr, nc = row+dr, col+dc
+                    nr, nc = row + dr, col + dc
                     if 0 <= nr < H and 0 <= nc < W:
-                        if self.map_data[nr*W+nc] == -1:
+                        if self.map_data[nr * W + nc] == -1:
                             return True
-            for dr, dc in dirs4:
-                nr, nc = row+dr, col+dc
-                if (0 <= nr < H and 0 <= nc < W and
-                        (nr, nc) not in visited and
-                        self.map_data[nr*W+nc] == 0):
-                    visited.add((nr, nc))
-                    queue.append((nr, nc))
         return False
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -1151,13 +1424,24 @@ class FrontierExplorationMultiranger(Node):
         sr, sc = self._world_to_grid(self.position[0], self.position[1])
         gr, gc = self._world_to_grid(self.goal[0], self.goal[1])
 
-        # Bug 1 fix: clamp BOTH start and goal to grid bounds.
-        # Previously only goal was clamped — an out-of-bounds start causes
-        # A* to silently fail with "no path found" on every call.
+        # Clamp into bounds, then snap both start and goal to nearby free cells.
         sr = max(0, min(self.map_height - 1, sr))
         sc = max(0, min(self.map_width  - 1, sc))
         gr = max(0, min(self.map_height - 1, gr))
         gc = max(0, min(self.map_width  - 1, gc))
+
+        start_free = self._nearest_free_cell(sr, sc)
+        goal_free = self._nearest_free_cell(gr, gc, max_radius=POSE_FREE_SEARCH_RADIUS + 4)
+
+        if start_free is None:
+            self._warn('A*: could not find a nearby free start cell')
+            return
+        if goal_free is None:
+            self._warn('A*: could not find a nearby free goal cell')
+            return
+
+        sr, sc = start_free
+        gr, gc = goal_free
 
         self._info(
             f'A*: ({sr},{sc})→({gr},{gc}) frontier=({self.goal[0]:.2f},{self.goal[1]:.2f})')
@@ -1166,7 +1450,7 @@ class FrontierExplorationMultiranger(Node):
                (-1,-1,1.414),(-1,1,1.414),(1,-1,1.414),(1,1,1.414)]
         found = False; path_cost = None
 
-        for inflation in range(WALL_INFLATION_CELLS, 0, -1):
+        for inflation in range(WALL_INFLATION_CELLS, MIN_ASTAR_INFLATION_CELLS - 1, -1):
             if inflation < WALL_INFLATION_CELLS:
                 self._warn(f'A*: reduced inflation={inflation}')
 
@@ -1302,12 +1586,31 @@ class FrontierExplorationMultiranger(Node):
         fc = self._get_frontier_cells()
         if not fc:
             return []
-        clusters = self._cluster_frontier_cells(fc)
 
-        return self._score_clusters(clusters, 0.0, MIN_VALID_CLUSTER_SIZE, 0.0, now)
+        reachable_free = self._get_reachable_free_cells()
+        if not reachable_free:
+            self._warn('Frontier search: no reachable free-space component from the current map pose yet.')
+            return []
+
+        fc = fc.intersection(reachable_free)
+        if not fc:
+            self._warn(
+                'Frontier search: frontier cells exist, but none are connected to the current free-space component.'
+            )
+            return []
+
+        clusters = self._cluster_frontier_cells(fc)
+        return self._score_clusters(
+            clusters,
+            0.0,
+            MIN_VALID_CLUSTER_SIZE,
+            0.0,
+            now,
+            reachable_free=reachable_free,
+        )
 
     def _score_clusters(self, clusters, min_dist, min_size,
-                        coverage_min_gain, now):
+                        coverage_min_gain, now, reachable_free=None):
         px, py = self.position[0], self.position[1]
         valid  = []
         for cluster in clusters:
@@ -1320,28 +1623,27 @@ class FrontierExplorationMultiranger(Node):
             for r, c in cluster:
                 tr += r; tc += c
             avg_r, avg_c = tr/n, tc/n
-            row = int(round(avg_r)); col = int(round(avg_c))
 
-            # Snap centroid to the nearest free cell in the cluster if the
-            # raw average lands on a wall or unknown cell. Frontier cells
-            # border walls by definition, so the cluster average is often
-            # pulled onto or into the wall itself. Snapping ensures the goal
-            # handed to A* is always confirmed free space.
-            if (self.map_data is not None and
-                    not (0 <= row < self.map_height and
-                         0 <= col < self.map_width and
-                         self.map_data[row * self.map_width + col] == 0)):
-                best_r, best_c, best_d = row, col, float('inf')
-                for cr, cc in cluster:
-                    if self.map_data[cr * self.map_width + cc] == 0:
-                        d = (cr - avg_r)**2 + (cc - avg_c)**2
-                        if d < best_d:
-                            best_d = d
-                            best_r, best_c = cr, cc
-                row, col = best_r, best_c
+            best_r = best_c = None
+            best_d = float('inf')
+            for cr, cc in cluster:
+                if reachable_free is not None and (cr, cc) not in reachable_free:
+                    continue
+                if self.map_data[cr * self.map_width + cc] != 0:
+                    continue
+                d = (cr - avg_r)**2 + (cc - avg_c)**2
+                if d < best_d:
+                    best_d = d
+                    best_r, best_c = cr, cc
 
+            if best_r is None or best_c is None:
+                continue
+
+            row, col = best_r, best_c
             wx = self.map_origin[0] + (col+0.5)*MAP_RES
             wy = self.map_origin[1] + (row+0.5)*MAP_RES
+            if self._goal_is_blacklisted(wx, wy):
+                continue
             dist = math.hypot(wx-px, wy-py)
             if dist < min_dist:
                 continue
@@ -1380,6 +1682,9 @@ class FrontierExplorationMultiranger(Node):
         return (angle + math.pi) % (2*math.pi) - math.pi
 
     def _publish_drone_marker(self):
+        if not self.pose_in_map_ready:
+            return
+
         """
         Publish a cyan arrow marker at the drone's current position so it
         is visible in RViz without needing a URDF or TF setup.
@@ -1395,7 +1700,7 @@ class FrontierExplorationMultiranger(Node):
         m.action             = Marker.ADD
         m.pose.position.x    = float(self.position[0])
         m.pose.position.y    = float(self.position[1])
-        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        m.pose.position.z    = float(MARKER_Z)
         # Encode yaw into the quaternion so the arrow points in the
         # drone's heading direction.
         yaw = self.angles[2]
@@ -1425,7 +1730,7 @@ class FrontierExplorationMultiranger(Node):
         m.action             = Marker.ADD
         m.pose.position.x    = float(x)
         m.pose.position.y    = float(y)
-        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        m.pose.position.z    = float(MARKER_Z)
         m.pose.orientation.w = 1.0
         m.scale.x = m.scale.y = m.scale.z = 0.25
         if home:
@@ -1451,7 +1756,7 @@ class FrontierExplorationMultiranger(Node):
         m.action             = Marker.ADD
         m.pose.position.x    = float(x)
         m.pose.position.y    = float(y)
-        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        m.pose.position.z    = float(MARKER_Z)
         m.pose.orientation.w = 1.0
         m.scale.x = m.scale.y = m.scale.z = 0.30
         m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.5, 0.0, 1.0  # orange
@@ -1473,7 +1778,7 @@ class FrontierExplorationMultiranger(Node):
         m.action             = Marker.ADD
         m.pose.position.x    = float(x)
         m.pose.position.y    = float(y)
-        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        m.pose.position.z    = float(MARKER_Z)
         m.pose.orientation.w = 1.0
         m.scale.x = m.scale.y = m.scale.z = 0.30
         m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.0, 0.0, 1.0  # red
@@ -1507,7 +1812,7 @@ class FrontierExplorationMultiranger(Node):
             m.action             = Marker.ADD
             m.pose.position.x    = float(wx)
             m.pose.position.y    = float(wy)
-            m.pose.position.z    = float(TAKEOFF_HEIGHT)
+            m.pose.position.z    = float(MARKER_Z)
             m.pose.orientation.w = 1.0
             m.scale.x = m.scale.y = m.scale.z = 0.12
             m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.0, 0.0, 1.0
@@ -1520,7 +1825,7 @@ class FrontierExplorationMultiranger(Node):
         msg.linear.x  = float(x)
         msg.linear.y  = float(y)
         msg.linear.z  = float(z)
-        msg.angular.z = float(wz)
+        msg.angular.z = float(-wz if self.invert_yaw_command else wz)
         self.cmd_pub.publish(msg)
 
 
@@ -1528,7 +1833,7 @@ def main(args=None):
     rclpy.init(args=args)
     node = FrontierExplorationMultiranger()
     rclpy.spin(node)
-    rclpy.destroy_node()
+    node.destroy_node()
     rclpy.shutdown()
 
 
