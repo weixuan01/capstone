@@ -12,6 +12,16 @@ from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
 
 import tf_transformations
+<<<<<<< Updated upstream
+=======
+import math
+import numpy as np
+import time
+
+GLOBAL_SIZE_X = 20.0
+GLOBAL_SIZE_Y = 20.0
+MAP_RES = 0.1
+>>>>>>> Stashed changes
 
 
 class SimpleMapperMultiranger(Node):
@@ -322,10 +332,19 @@ class SimpleMapperMultiranger(Node):
 
 
 def main(args=None):
+<<<<<<< Updated upstream
     rclpy.init(args=args)
     node = SimpleMapperMultiranger()
     rclpy.spin(node)
     node.destroy_node()
+=======
+    
+    rclpy.init(args=args)
+    time.sleep(3)
+    simple_mapper_multiranger = SimpleMapperMultiranger()
+    rclpy.spin(simple_mapper_multiranger)
+    rclpy.destroy_node()
+>>>>>>> Stashed changes
     rclpy.shutdown()
 
 

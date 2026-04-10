@@ -12,6 +12,19 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 
 def generate_launch_description():
+
+    # ── Launch arguments ──────────────────────────────────────────────────────
+    # Pass map_file:=/path/to/map.yaml to pre-load a saved map into the shared
+    # mapper.  Leave empty to start with a blank map (origin-averaging mode).
+    map_file_arg = DeclareLaunchArgument(
+        'map_file',
+        default_value='',
+        description='Absolute path to a previously saved map.yaml. '
+                    'When set the shared mapper loads this map on startup '
+                    'instead of waiting for odom samples.'
+    )
+    map_file = LaunchConfiguration('map_file')
+
     # Configure ROS nodes for launch
 
     # Setup project paths'''
@@ -36,32 +49,44 @@ def generate_launch_description():
             output='screen',
             parameters=[{'hover_height': 0.3},
                         {'incoming_twist_topic': '/cmd_vel'},
-                        {'robot_prefix': 'crazyflie_real'},]    # Unique identifier
+                        {'robot_prefix': '/crazyflie_user_real'},]    # Unique identifier
         )
-    
-    # start shared mapper node 
-    shared_mapper = Node(
-        package='crazyflie_ros2_multiranger_shared_mapper',
-        executable='shared_mapper_multiranger',
-        name='shared_mapper',
+
+    #=======================================================================
+    # if launching with an already made map, use these 2 nodes
+    map_server = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
         output='screen',
         parameters=[
-            {'robot_prefixes': ['crazyflie_real']}, # add more drones here	
+            {'yaml_filename': '/home/ryan/map.yaml'},
             {'use_sim_time': False}
         ]
     )
-    
 
-    # start a frontier exploration node
-    frontier_exploration = Node(
-        package='crazyflie_ros2_multiranger_frontier_exploration',
-        executable='frontier_exploration_multiranger',
-        name='frontier_exploration_multiranger',
+    lifecycle_manager = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='lifecycle_manager_map',
         output='screen',
         parameters=[
-            {'robot_prefix': 'crazyflie_real'},
+            {'autostart': True},
+            {'node_names': ['map_server']}
+        ]
+    )
+    #=======================================================================
+
+    # start a map_user node
+    map_user = Node(
+        package='crazyflie_ros2_multiranger_map_user',
+        executable='map_user',
+        name='map_user',
+        output='screen',
+        parameters=[
+            {'robot_prefix': '/crazyflie_user_real'},
             {'use_sim_time': False},
-            {'delay': 5.0},
+            {'delay': 0.0},
             {'max_turn_rate': 0.7},
             {'max_forward_speed': 0.5},
             {'target_altitude': 0.5},
@@ -69,6 +94,18 @@ def generate_launch_description():
             {'max_vz': 0.4},
             {'max_obstacle_distance': 0.3}
         ]
+    )
+    
+    shared_mapper = Node(
+    package='crazyflie_ros2_multiranger_shared_mapper',
+    executable='shared_mapper_multiranger',
+    name='shared_mapper',
+    output='screen',
+    parameters=[
+        {'robot_prefixes': ['/crazyflie_user_real']},
+        {'map_file': map_file},
+        {'use_sim_time': False},
+    ]
     )
 
     rviz_config_path = os.path.join(
@@ -92,6 +129,11 @@ def generate_launch_description():
         crazyflie_vel_mux,
         #simple_mapper,
         shared_mapper,
-        frontier_exploration,
-        rviz
+        #frontier_exploration,
+
+        map_user,
+        rviz,
+
+        map_server,
+        lifecycle_manager
         ])

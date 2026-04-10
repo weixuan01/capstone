@@ -11,10 +11,11 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     # Configure ROS nodes for launch
 
-    # Setup project paths'''
+    # Setup project paths
     pkg_project_crazyswarm2 = get_package_share_directory('crazyflie')
     pkg_multiranger_bringup = get_package_share_directory('crazyflie_ros2_multiranger_bringup')
     crazyflies_yaml = os.path.join(
@@ -36,38 +37,18 @@ def generate_launch_description():
             output='screen',
             parameters=[{'hover_height': 0.3},
                         {'incoming_twist_topic': '/cmd_vel'},
-                        {'robot_prefix': 'crazyflie_real'},]    # Unique identifier
+                        {'robot_prefix': 'crazyflie_real'},]
         )
-    
-    # start shared mapper node 
+
+    # start a shared mapper node
     shared_mapper = Node(
         package='crazyflie_ros2_multiranger_shared_mapper',
         executable='shared_mapper_multiranger',
         name='shared_mapper',
         output='screen',
         parameters=[
-            {'robot_prefixes': ['crazyflie_real']}, # add more drones here	
+            {'robot_prefixes': ['crazyflie_real']},
             {'use_sim_time': False}
-        ]
-    )
-    
-
-    # start a frontier exploration node
-    frontier_exploration = Node(
-        package='crazyflie_ros2_multiranger_frontier_exploration',
-        executable='frontier_exploration_multiranger',
-        name='frontier_exploration_multiranger',
-        output='screen',
-        parameters=[
-            {'robot_prefix': 'crazyflie_real'},
-            {'use_sim_time': False},
-            {'delay': 5.0},
-            {'max_turn_rate': 0.7},
-            {'max_forward_speed': 0.5},
-            {'target_altitude': 0.5},
-            {'alt_kp': 1.2},
-            {'max_vz': 0.4},
-            {'max_obstacle_distance': 0.3}
         ]
     )
 
@@ -89,9 +70,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         crazyflie_real,
-        crazyflie_vel_mux,
-        #simple_mapper,
         shared_mapper,
-        frontier_exploration,
+        crazyflie_vel_mux,
         rviz
         ])

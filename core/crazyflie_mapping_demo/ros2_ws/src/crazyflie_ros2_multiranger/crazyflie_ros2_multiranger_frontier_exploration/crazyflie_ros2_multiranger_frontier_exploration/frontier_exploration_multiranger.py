@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
+    #!/usr/bin/env python3
 
 """
 Autonomous Frontier-Based Explorer for Crazyflie
 =================================================
 State machine:
+<<<<<<< Updated upstream
   1. TAKEOFF        - take off and hover
   2. SPINNING       - initial 360° scan
   3. FIND_FRONTIER  - score frontiers, pick best goal
@@ -94,6 +95,19 @@ Wall-crash fixes (v8):
     The drone now stays in avoidance long enough to actually clear the wall
     before resuming navigation, and the cooldown prevents an immediate
     re-trigger on the same obstacle.
+=======
+  1. TAKEOFF       - take off and hover
+  2. SPINNING      - 100° scan; used both after takeoff and after each frontier
+                     goal is reached, so every scan is identical
+  3. FIND_FRONTIER - score frontiers, pick best goal
+  4. NAVIGATE      - follow A* waypoints to goal
+  5. DONE          - exploration complete → return to (0,0) via A* → land
+  7. LANDING       - descend and stop
+
+Efficiency (v2): [1-10]
+Coverage  (v3): [11-18]
+
+>>>>>>> Stashed changes
 """
 
 import rclpy
@@ -119,6 +133,7 @@ GLOBAL_SIZE_Y = 20.0
 MAP_RES       = 0.1
 
 # ── Flight parameters ─────────────────────────────────────────────────────────
+<<<<<<< Updated upstream
 TAKEOFF_HEIGHT         = 0.02
 TAKEOFF_DELAY          = 2.0
 CRUISE_SPEED           = 0.3
@@ -153,22 +168,44 @@ MIN_VALID_CLUSTER_SIZE = 2 #used as the threshold between small and large cluste
 #   - push away harder when a wall is too close
 #   - centre only when both walls are truly visible
 #   - reduce forward speed when off-centre or in tight corridors
+=======
+TAKEOFF_HEIGHT         = 0.0005
+TAKEOFF_DELAY          = 3.0
+CRUISE_SPEED           = 0.3 #0.3
+MAX_TURN_RATE          = 0.2
+OBSTACLE_DIST          = 0.4   # outer detection radius: trigger replan when front wall within this distance
+GOAL_REACHED_DIST      = 0.2   # shared threshold for waypoints, final goal, and home arrival
+MIN_FRONTIER_DIST      = 0.5
+FRONTIER_STEP          = 1
+REPLAN_COOLDOWN        = 3.5
+WALL_INFLATION_CELLS   = 2      # cells of clearance around known walls
+STANDOFF_WAYPOINTS = 2          # waypoints to trim from the end of the A* path;
+                                 # at WAYPOINT_SPACING=2 cells and MAP_RES=0.1m
+                                 # this gives ~0.4m standoff from the frontier,
+                                 # always on the correct side of any wall
+PROXIMITY_COST_WEIGHT  = 2    # how strongly A* avoids cells near walls;
+                                 # higher = path hugs centre more but may
+                                 # fail in tight corridors; 2-6 is a good range
+PROXIMITY_COST_RADIUS  = 10#10   # cells — BFS radius for proximity cost map;
+                                 # cells within this radius of a wall/unknown
+                                 # get a proximity penalty in A*;
+                                 # at MAP_RES=0.1m, 10 cells = 1.0m clearance zone
+
+# ── Wall avoidance parameters ─────────────────────────────────────────────────
+# ── Frontier filtering ────────────────────────────────────────────────────────
+MIN_CLUSTER_SIZE       = 15   # preferred minimum cluster size; relaxed to MIN_VALID_CLUSTER_SIZE if no clusters pass
+MIN_VALID_CLUSTER_SIZE = 3    # absolute floor
+
+# ── Wall safety ───────────────────────────────────────────────────────────────
+# Push the drone away from any wall closer than WALL_PUSH_DIST on all four
+# axes.  WALL_SAFE_DIST is kept as the threshold below which speed is reduced
+# when only one side wall is visible.
+WALL_PUSH_DIST          = 0.3   # inner hard-push radius: must be < OBSTACLE_DIST
+>>>>>>> Stashed changes
 WALL_SAFE_DIST          = 0.30
-WALL_PUSH_DIST          = 0.38
-WALL_CENTRE_MAX_VALID   = 0.95
-TIGHT_CORRIDOR_WIDTH    = 0.95
-MEDIUM_CORRIDOR_WIDTH   = 1.50
-WALL_FILTER_ALPHA       = 0.35
-WALL_KP_SAFETY          = 1.35
-WALL_KP_CENTRE_TIGHT    = 0.95
-WALL_KP_CENTRE_MEDIUM   = 0.65
-WALL_KP_CENTRE_WIDE     = 0.35
+WALL_FILTER_ALPHA       = 0.3
+WALL_KP_SAFETY          = 0.3
 MAX_LATERAL_SPEED       = 0.24
-OFFCENTER_SLOW_BAND     = 0.08
-OFFCENTER_HARD_BAND     = 0.16
-TIGHT_SPEED_SCALE       = 0.55
-MEDIUM_SPEED_SCALE      = 0.72
-WIDE_SPEED_SCALE        = 0.88
 
 # ── Initial spin ──────────────────────────────────────────────────────────────
 SPIN_RATE = 0.5
@@ -176,24 +213,17 @@ SPIN_RATE = 0.5
 # ── Coordinate memory / revisit prevention ───────────────────────────────────
 VISITED_CELL_RADIUS = 2
 RECENT_GOAL_MEMORY  = 8
-FAILED_GOAL_MEMORY  = 10
 
 # ── Utility scoring weights ───────────────────────────────────────────────────
-DISTANCE_WEIGHT     = 1.0
+DISTANCE_WEIGHT     = 1.6 # tested with 1.3, revert to this if in doulbt
 SIZE_WEIGHT         = 1.6
 UNKNOWN_WEIGHT      = 2.0
-VISIT_PENALTY       = 0.9
-RECENT_GOAL_PENALTY = 5.0
-FAILED_GOAL_PENALTY = 7.0
-BLACKLIST_PENALTY   = 20.0
+VISIT_PENALTY       = 0.5 #0.9
+RECENT_GOAL_PENALTY = 0.0 #10.0
 
 # ── Goal commitment / hysteresis ─────────────────────────────────────────────
 GOAL_KEEP_RATIO       = 0.85
 GOAL_SWITCH_MIN_DELTA = 2.0
-
-# ── Failed region blacklist ───────────────────────────────────────────────────
-FAILED_REGION_RADIUS   = 0.9
-FAILED_REGION_COOLDOWN = 45.0
 
 # ── Stuck detector ────────────────────────────────────────────────────────────
 STUCK_PROGRESS_DIST       = 0.20
@@ -203,51 +233,23 @@ MAX_REPLANS_PER_GOAL      = 3  # abandon goal after this many replans without re
 
 # [fix-v8] Reduced from 15 → 7 cells (0.7 m gaps) so the nav loop catches
 # obstacles more frequently between waypoints.
+<<<<<<< Updated upstream
 WAYPOINT_SPACING = 3
+=======
+WAYPOINT_SPACING = 2
+>>>>>>> Stashed changes
 
 # ── Scan coverage tracking [11] ───────────────────────────────────────────────
 SENSOR_RANGE_CELLS = 5
-COVERAGE_MIN_GAIN  = 0.15
-
-# ── Branch / dead-end awareness [19][20] ─────────────────────────────────────
-BRANCH_ANGULAR_SPREAD_DEG = 60.0
-BRANCH_DEDUP_RADIUS       = 1.2
-MAX_BRANCH_MEMORY         = 8
 
 # ── Reachability BFS [23][25] ─────────────────────────────────────────────────
 REACHABILITY_STRIDE         = 3
 REACHABILITY_CHECK_INTERVAL = 3.0
 
-# ── Map-stagnation detector [27-30] ──────────────────────────────────────────
-# Rolling window over which the drop in unknown cell count is measured.
-UNKNOWN_RATE_WINDOW = 12.0          # seconds
-
-# Minimum cells that must disappear within the window to count as "active".
-# 30 cells ≈ 0.3 m² at MAP_RES=0.1 m.
-UNKNOWN_RATE_MIN_DROP = 30          # cells
-
-# How often a (time, count) sample is appended.
-UNKNOWN_SAMPLE_INTERVAL = 2.0       # seconds
-
-# Grace period after spin before stagnation can trigger.
-EXPLORATION_MIN_TIME = 25.0         # seconds
-
-# ── Consecutive-stagnation limit [35] ────────────────────────────────────────
-# How many stagnation events in a row (with no intervening progress) are
-# allowed before the drone declares exploration complete and goes home.
-#
-# = 2 is the recommended value:
-#   • Single-arm map: 1st stagnation → 1 branch attempt → no drop → 2nd
-#     stagnation → DONE.
-#   • Two-arm map:   1st arm stagnant → branch visit → unknowns drop (new arm
-#     entered) → counter resets → 2nd arm stagnant → DONE after ≤2 attempts.
-#
-# Increase to 3 if your map has many dead-end corridors that look explored
-# from afar but still have a thin ring of unknown cells near their tips.
-MAX_CONSECUTIVE_STAGNATIONS = 2
 
 
 class State(Enum):
+<<<<<<< Updated upstream
     TAKEOFF        = auto()
     SPINNING       = auto()
     FIND_FRONTIER  = auto()
@@ -256,12 +258,37 @@ class State(Enum):
     POST_GOAL_SPIN = auto()
     DONE           = auto()
     LANDING        = auto()
+=======
+    TAKEOFF       = auto()
+    SPINNING      = auto()
+    FIND_FRONTIER = auto()
+    NAVIGATE      = auto()
+    DONE          = auto()
+    LANDING       = auto()
+>>>>>>> Stashed changes
+
+
+class GoalHealth(Enum):
+    """Return value of _navigate_goal_health().
+    Encapsulates stuck detection and replan-count gating so the
+    NAVIGATE block only sees a single verdict, not the raw counters."""
+    HEALTHY  = auto()   # nothing wrong — continue navigating
+    REPLAN   = auto()   # drone has moved; try a fresh A* path
+    ABANDON  = auto()   # goal is unreachable; discard and pick a new one
+
+
+class Safety(Enum):
+    """Return value of _navigate_safety_check().
+    Summarises sensor readings into a single action word so the
+    NAVIGATE block does not need to know the threshold values."""
+    CLEAR         = auto()   # no obstacle within braking distance
+    REPLAN_NEEDED = auto()   # front wall close enough to warrant a new path
 
 
 class FrontierExplorationMultiranger(Node):
 
     def __init__(self):
-        super().__init__('simple_mapper_multiranger')
+        super().__init__('frontier_exploration_multiranger')
 
         self.declare_parameter('robot_prefix', '/crazyflie')
         robot_prefix = self.get_parameter('robot_prefix').value
@@ -293,30 +320,22 @@ class FrontierExplorationMultiranger(Node):
         self.last_replan_time = 0.0
         self.last_replan_pos  = None
         self.last_path_cost   = None
+<<<<<<< Updated upstream
+=======
+        self.navigating_home  = False
+>>>>>>> Stashed changes
 
         # ── Coordinate memory ─────────────────────────────────────────────────
         self.filtered_right = None
         self.filtered_left  = None
-        self.last_corridor_width = None
-        self.last_centering_active = False
 
         self.visited_counts = {}
         self.recent_goals   = deque(maxlen=RECENT_GOAL_MEMORY)
-        self.failed_goals   = deque(maxlen=FAILED_GOAL_MEMORY)
-        self.failed_regions = []
 
         self.scanned_cells = set()                          # [12]
-        self.branch_points = deque(maxlen=MAX_BRANCH_MEMORY) # [21]
         self.last_reachability_time = 0.0                   # [25]
-
-        # [31] Unknown-count history: deque of (timestamp, count)
-        self.unknown_history     = deque()
-        self.last_unknown_sample = 0.0
-
-        # [37] Consecutive stagnation counter.
-        # Incremented each time stagnation fires; reset to 0 when map is
-        # actively learning (stagnation check returns False).
-        self.consecutive_stagnations = 0
+        self.zero_cluster_count = 0                         # successive FIND_FRONTIER ticks with 0 clusters
+        self.no_path_failures = 0                           # successive frontiers with no A* path found
 
         # ── Goal / stuck tracking ─────────────────────────────────────────────
         self.goal_start_pos        = None
@@ -345,19 +364,40 @@ class FrontierExplorationMultiranger(Node):
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
             history=HistoryPolicy.KEEP_LAST)
         self.create_subscription(
-            OccupancyGrid, robot_prefix + '/map', self.map_callback, map_qos)
+            OccupancyGrid, '/map', self.map_callback, map_qos)
 
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.marker_pub = self.create_publisher(Marker, '/exploration_goal', 10)
         self.waypoint_marker_pub = self.create_publisher(
             MarkerArray, '/waypoints', 10)
+<<<<<<< Updated upstream
+=======
+        self.drone_marker_pub = self.create_publisher(Marker, '/drone_pose', 10)
+        self.possible_goal_marker_pub = self.create_publisher(Marker, '/possible_goal', 10)
+        self.failed_goal_marker_pub = self.create_publisher(Marker, '/failed_goal', 10)
+>>>>>>> Stashed changes
         self.create_service(
             Trigger, robot_prefix + '/stop_exploration', self.stop_callback)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
         self._publish_vel(z=TAKEOFF_HEIGHT)
         self.start_time = self.get_clock().now().nanoseconds * 1e-9
-        self.get_logger().info(f'Explorer started. prefix={robot_prefix}')
+        self._info(f'Explorer started. prefix={robot_prefix}')
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Logging helpers — prepend current state to every message so the state
+    # is always visible without repeating the ROS timestamp or node name.
+    # Format:  [STATE] message
+    # ══════════════════════════════════════════════════════════════════════════
+
+    def _info(self, msg):
+        self.get_logger().info(f'[{self.state.name}] {msg}')
+
+    def _warn(self, msg):
+        self.get_logger().warn(f'[{self.state.name}] {msg}')
+
+    def _err(self, msg):
+        self.get_logger().error(f'[{self.state.name}] {msg}')
 
     # ══════════════════════════════════════════════════════════════════════════
     # ROS callbacks
@@ -372,14 +412,11 @@ class FrontierExplorationMultiranger(Node):
             [q.x, q.y, q.z, q.w]))
 
         if not self.position_received:
-            self.start_pos         = [self.position[0], self.position[1]]
             self.position_received = True
             self.last_progress_pos = (self.position[0], self.position[1])
             now = self.get_clock().now().nanoseconds * 1e-9
             self.last_progress_time = now
-            self.get_logger().info(
-                f'Home captured: '
-                f'({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
+           
 
         if self.map_received:
             row, col = self._world_to_grid(self.position[0], self.position[1])
@@ -410,7 +447,7 @@ class FrontierExplorationMultiranger(Node):
         self.map_received = True
 
     def stop_callback(self, request, response):
-        self.get_logger().info('Stop requested — landing now')
+        self._info('Stop requested — landing now')
         self.timer.cancel()
         self._publish_vel(z=-0.2)
         response.success = True
@@ -426,21 +463,26 @@ class FrontierExplorationMultiranger(Node):
             self._state_machine(now)
         except Exception as e:
             import traceback
-            self.get_logger().error(f'Crash: {e}')
-            self.get_logger().error(traceback.format_exc())
+            self._err(f'Crash: {e}')
+            self._err(traceback.format_exc())
             self._publish_vel()
             self.timer.cancel()
 
     def _state_machine(self, now):
         self._log_status(now)
-        self._prune_failed_regions(now)
 
         # ── TAKEOFF ───────────────────────────────────────────────────────────
         if self.state == State.TAKEOFF:
             self._publish_vel(z=TAKEOFF_HEIGHT)
             if now - self.start_time > TAKEOFF_DELAY:
+<<<<<<< Updated upstream
                 self.get_logger().info(
                     'Takeoff complete. Rotating 100° to build initial map before exploring.')
+=======
+                self.start_pos         = [self.position[0], self.position[1]]
+                self._info( f'Home captured: ' f'({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
+                self._info(  'Takeoff complete. Rotating 100° to build initial map before exploring.')
+>>>>>>> Stashed changes
                 self.spin_start_time     = now
                 self.spin_start_yaw      = self.angles[2]
                 self.spin_total_rotation = 0.0
@@ -457,6 +499,7 @@ class FrontierExplorationMultiranger(Node):
             self._last_spin_yaw       = self.angles[2]
             self.spin_total_rotation += abs(yaw_delta)
 
+<<<<<<< Updated upstream
             if (now - self.last_status_log_time) >= self.status_log_period:
                 self.get_logger().info(
                     f'Scanning surroundings: rotated '
@@ -467,6 +510,12 @@ class FrontierExplorationMultiranger(Node):
                 self.exploration_start_time = now
                 self.get_logger().info(
                     'Initial scan complete. Starting frontier exploration.')
+=======
+            if self.spin_total_rotation >= 10/36* 2 * math.pi:
+                self._publish_vel()
+                self.exploration_start_time = now
+                self._info('Scan complete. Starting frontier selection.')
+>>>>>>> Stashed changes
                 self.state = State.FIND_FRONTIER
 
         # ── FIND_FRONTIER ─────────────────────────────────────────────────────
@@ -474,6 +523,7 @@ class FrontierExplorationMultiranger(Node):
             self._publish_vel(y=self._get_wall_correction())
 
             if not self.map_received or not self.position_received:
+<<<<<<< Updated upstream
                 self.get_logger().info('Waiting for map and position data from sensors...')
                 return
 
@@ -531,6 +581,16 @@ class FrontierExplorationMultiranger(Node):
                 f'Choosing next frontier. Found {len(clusters)} candidate(s). '
                 f'Unknown cells: {unk} (changed {drop:+d} over last {UNKNOWN_RATE_WINDOW:.0f}s). '
                 f'Junctions remembered: {len(self.branch_points)}.')
+=======
+                self._info('Waiting for map and position data from sensors...')
+                return
+
+            # ── Record junction if multiple directions visible [22] ────────────
+            clusters = self._get_frontier_clusters(now)
+
+            self._info(
+                f'Choosing next frontier. Found {len(clusters)} candidate(s).')
+>>>>>>> Stashed changes
             for i, c in enumerate(clusters[:8]):
                 cx, cy, dist, size, new_unk, total_unk, pen, score, pcost = c
                 cov = 100.0 * (1.0 - new_unk / max(1.0, total_unk))
@@ -538,18 +598,35 @@ class FrontierExplorationMultiranger(Node):
                         if self.goal is not None and
                         math.hypot(cx-self.goal[0], cy-self.goal[1]) < 0.2
                         else (' <-- BEST' if i == 0 else ''))
+<<<<<<< Updated upstream
                 self.get_logger().info(
                     f'  Frontier {i+1}: pos=({cx:.2f},{cy:.2f}) '
                     f'straight-line={dist:.2f}m path-cost={pcost:.2f} '
+=======
+                self._info(
+                    f'  F{i+1}: straight-line={dist:.2f}m path-cost={pcost:.2f} '
+>>>>>>> Stashed changes
                     f'size={size}cells new-unknowns={new_unk:.0f} '
                     f'already-scanned={cov:.0f}% penalty={pen:.1f} score={score:.2f}{mark}')
 
             # No clusters → secondary BFS fallback
             if not clusters:
+                self.zero_cluster_count += 1
+                self._warn(
+                    f'No frontier clusters found '
+                    f'({self.zero_cluster_count}/3 successive tries).')
+                if self.zero_cluster_count >= 3:
+                    elapsed = self._elapsed_exploration_time(now)
+                    self._info(
+                        f'0 clusters found 3 times in a row. t={elapsed:.1f}s → going home')
+                    self.zero_cluster_count = 0
+                    self.state = State.DONE
+                    return
                 self._handle_no_clusters(now)
                 return
 
             # ── Normal goal selection ─────────────────────────────────────────
+            self.zero_cluster_count = 0
             best      = clusters[0]
             new_goal  = (best[0], best[1])
             new_score = best[7]
@@ -563,7 +640,11 @@ class FrontierExplorationMultiranger(Node):
                             (new_score - cs) < GOAL_SWITCH_MIN_DELTA):
                         keep_current = True
                         new_goal, new_score = self.goal, cs
+<<<<<<< Updated upstream
                         self.get_logger().info(
+=======
+                        self._info(
+>>>>>>> Stashed changes
                             f'Keeping current goal ({self.goal[0]:.2f},{self.goal[1]:.2f}) '
                             f'— not worth switching. Current score={cs:.2f}, best available={clusters[0][7]:.2f}.')
 
@@ -577,17 +658,27 @@ class FrontierExplorationMultiranger(Node):
                 self.last_progress_time    = now
                 self.stuck_events_for_goal = 0
                 self.replan_count_for_goal = 0
+<<<<<<< Updated upstream
                 self.get_logger().info(
                     f'New goal selected: ({self.goal[0]:.2f},{self.goal[1]:.2f}) '
                     f'score={self.goal_score:.2f}. Planning path...')
                 self._publish_goal_marker(self.goal[0], self.goal[1])
             else:
                 self.get_logger().info(
+=======
+                self._info(
+                    f'New goal selected: ({self.goal[0]:.2f},{self.goal[1]:.2f}) '
+                    f'score={self.goal_score:.2f}. Planning path...')
+            else:
+                self._info(
+>>>>>>> Stashed changes
                     f'Continuing toward ({self.goal[0]:.2f},{self.goal[1]:.2f}) '
                     f'score={self.goal_score:.2f}. Replanning path...')
 
+            self._publish_possible_goal_marker(self.goal[0], self.goal[1])
             self._plan_path_to_goal()
             if not self.waypoints:
+<<<<<<< Updated upstream
                 self._mark_goal_failed(now, self.goal, 'A* no path FIND_FRONTIER')
                 self.get_logger().warn(
                     f'Could not find a path to ({self.goal[0]:.2f},{self.goal[1]:.2f}). '
@@ -595,16 +686,42 @@ class FrontierExplorationMultiranger(Node):
                 self.state = State.STEER_DIRECT
             else:
                 self.get_logger().info(
+=======
+                self._publish_failed_goal_marker(self.goal[0], self.goal[1])
+                self.no_path_failures += 1
+                self._warn(
+                    f'Could not find a path to ({self.goal[0]:.2f},{self.goal[1]:.2f}). '
+                    f'Choosing a new frontier. '
+                    f'(no_path_failures={self.no_path_failures}/{len(clusters)})')
+                self.recent_goals.append(self.goal)
+                self.goal = self.goal_score = None
+                # If every available frontier has failed A*, there is nothing
+                # left to navigate to — transition to DONE rather than looping.
+                if self.no_path_failures >= len(clusters):
+                    elapsed = self._elapsed_exploration_time(now)
+                    self._warn(
+                        f'All {len(clusters)} frontier(s) are unreachable via A*. '
+                        f't={elapsed:.1f}s → going home.')
+                    self.no_path_failures = 0
+                    self.state = State.DONE
+                else:
+                    self.state = State.FIND_FRONTIER
+            else:
+                self.no_path_failures = 0
+                self._info(
+>>>>>>> Stashed changes
                     f'Path found with {len(self.waypoints)} waypoints. Navigating.')
                 self.state = State.NAVIGATE
 
         # ── NAVIGATE ──────────────────────────────────────────────────────────
         elif self.state == State.NAVIGATE:
             if self.goal is None:
+                self._warn('NAV-ENTRY: goal is None — redirecting to FIND_FRONTIER')
                 self.state = State.FIND_FRONTIER
                 self._publish_vel(y=self._get_wall_correction())
                 return
 
+<<<<<<< Updated upstream
             if self._is_stuck(now):
                 self.stuck_events_for_goal += 1
                 self.get_logger().warn(
@@ -663,14 +780,63 @@ class FrontierExplorationMultiranger(Node):
                     return
                 self.get_logger().info(
                     f'Replan successful — {len(self.waypoints)} waypoints remaining.')
+=======
+            self._info(
+                f'NAV-ENTRY: goal=({self.goal[0]:.2f},{self.goal[1]:.2f}) '
+                f'wps={len(self.waypoints)} cur_wp={self.current_wp} '
+                f'needs_replan={self.needs_replan} '
+                f'replan_count={self.replan_count_for_goal} '
+                f'stuck_events={self.stuck_events_for_goal} '
+                f'last_replan_time={self.last_replan_time:.1f} now={now:.1f}')
 
-            if not self.waypoints and self.current_wp is None:
-                self.goal = self.goal_score = None
-                self._start_post_goal_spin(now)
+            # Layer 1 — goal health: stuck detection and replan-count gating.
+            health = self._navigate_goal_health(now)
+            self._info(f'NAV-L1: health={health.name}')
+            if health == GoalHealth.ABANDON:
+                return
+            if health == GoalHealth.REPLAN:
+                self._navigate_execute_replan(now)
                 return
 
+            # Layer 2 — safety arbitration: front-wall replan trigger.
+            safety = self._navigate_safety_check()
+            cooldown_ok = self._replan_cooldown_ok(now)
+            self._info(
+                f'NAV-L2: safety={safety.name} '
+                f'front={self._front_range():.3f}m '
+                f'cooldown_ok={cooldown_ok} '
+                f'time_since_replan={now - self.last_replan_time:.1f}s')
+            if safety == Safety.REPLAN_NEEDED and cooldown_ok:
+                self._navigate_execute_replan(now)
+                return
+>>>>>>> Stashed changes
+
+            # Layer 3 — execution: waypoint following with wall correction.
+            if not self.waypoints and self.current_wp is None:
+                self._info('NAV-L3: waypoints exhausted and no current_wp — goal complete')
+                self.goal = self.goal_score = None
+<<<<<<< Updated upstream
+                self._start_post_goal_spin(now)
+=======
+                if self.navigating_home:
+                    self.navigating_home = False
+                    self._info('Home reached — landing.')
+                    self.state = State.LANDING
+                else:
+                    self._info('Goal reached — spinning 100° to scan area')
+                    self.spin_start_yaw      = self.angles[2]
+                    self.spin_total_rotation = 0.0
+                    self._last_spin_yaw      = self.angles[2]
+                    self.state = State.SPINNING
+>>>>>>> Stashed changes
+                return
+
+            self._info(
+                f'NAV-L3: calling _follow_waypoints — '
+                f'wps={len(self.waypoints)} cur_wp={self.current_wp}')
             if self._follow_waypoints(now):
                 self.goal = self.goal_score = None
+<<<<<<< Updated upstream
                 self._start_post_goal_spin(now)
 
         # ── STEER_DIRECT ──────────────────────────────────────────────────────
@@ -761,11 +927,26 @@ class FrontierExplorationMultiranger(Node):
                 self.state = State.FIND_FRONTIER
 
         # ── DONE — return to start via A* ────────────────────────────────────
+=======
+                if self.navigating_home:
+                    self.navigating_home = False
+                    self._info('Home reached — landing.')
+                    self.state = State.LANDING
+                else:
+                    self._info('Goal reached — spinning 100° to scan area')
+                    self.spin_start_yaw      = self.angles[2]
+                    self.spin_total_rotation = 0.0
+                    self._last_spin_yaw      = self.angles[2]
+                    self.state = State.SPINNING
+
+        # ── DONE — hand off to NAVIGATE for the return home ──────────────────
+>>>>>>> Stashed changes
         elif self.state == State.DONE:
             if self.start_pos is None:
                 self.state = State.LANDING
                 return
 
+<<<<<<< Updated upstream
             if self.goal is None:
                 home = (self.start_pos[0], self.start_pos[1])
                 self.goal = home
@@ -890,7 +1071,57 @@ class FrontierExplorationMultiranger(Node):
             if self._follow_waypoints(now):
                 self.get_logger().info('Start position reached. Landing.')
                 self.goal  = None
+=======
+            home = (self.start_pos[0], self.start_pos[1])
+            elapsed = self._elapsed_exploration_time(now)
+            self._info(
+                f'Exploration done (t={elapsed:.1f}s). '
+                f'Returning to start ({home[0]:.3f},{home[1]:.3f}) via A*.')
+            self._publish_goal_marker(home[0], home[1], home=True)
+
+            # If already within 10 cm, land immediately.
+            dist_to_home = math.hypot(
+                self.position[0] - home[0],
+                self.position[1] - home[1])
+            if dist_to_home < GOAL_REACHED_DIST:
+                self._info(
+                    f'Already at home ({dist_to_home:.2f}m). Landing immediately.')
                 self.state = State.LANDING
+                return
+
+            # Set up NAVIGATE to treat home as the current goal.
+            # navigating_home=True tells NAVIGATE to skip the post-goal spin
+            # and go straight to LANDING, and to use a 10 cm arrival threshold.
+            self.goal                  = home
+            self.goal_score            = None
+            self.navigating_home       = True
+            self.waypoints             = []
+            self.current_wp            = None
+            self.needs_replan          = False
+            self.last_replan_time      = 0.0
+            self.last_replan_pos       = None
+            self.last_path_cost        = None
+            self.goal_start_pos        = (self.position[0], self.position[1])
+            self.goal_start_time       = now
+            self.last_progress_pos     = (self.position[0], self.position[1])
+            self.last_progress_time    = now
+            self.stuck_events_for_goal = 0
+            self.replan_count_for_goal = 0
+
+            self._plan_path_to_goal()
+            if not self.waypoints:
+                self._warn(
+                    'Could not find a path home via A*. '
+                    'Landing here.')
+>>>>>>> Stashed changes
+                self.state = State.LANDING
+                return
+
+            self._publish_waypoint_markers(self.waypoints)
+            self._info(
+                f'Return path planned: {len(self.waypoints)} waypoints. '
+                f'Handing off to NAVIGATE.')
+            self.state = State.NAVIGATE
 
         # ── LANDING ───────────────────────────────────────────────────────────
         elif self.state == State.LANDING:
@@ -899,87 +1130,72 @@ class FrontierExplorationMultiranger(Node):
                 elapsed = self._elapsed_exploration_time(now)
                 self.timer.cancel()
                 self._publish_vel()
+<<<<<<< Updated upstream
                 self.get_logger().info(
+=======
+                self._info(
+>>>>>>> Stashed changes
                     f'Landed at ({self.position[0]:.3f},{self.position[1]:.3f}). '
                     f'Total exploration time: {elapsed:.1f}s.')
 
     # ══════════════════════════════════════════════════════════════════════════
-    # Stagnation detector  [32][33]
+    # ══════════════════════════════════════════════════════════════════════════
+    # NAVIGATE helpers — the three layers called by the NAVIGATE block
     # ══════════════════════════════════════════════════════════════════════════
 
-    def _sample_unknown_history(self, now):
+    def _navigate_goal_health(self, now):
         """
-        [32] Append a (timestamp, unknown_count) sample throttled to
-        UNKNOWN_SAMPLE_INTERVAL; prune entries older than UNKNOWN_RATE_WINDOW.
+        Layer 1 — goal health check.
+
+        Encapsulates stuck detection and replan-count gating so the NAVIGATE
+        block sees a single GoalHealth verdict instead of raw counter logic.
+
+        Returns:
+          GoalHealth.ABANDON  — goal is unreachable; caller must discard it.
+          GoalHealth.REPLAN   — drone has moved since the last replan; caller
+                                should attempt a fresh A* path.
+          GoalHealth.HEALTHY  — nothing wrong; continue navigating normally.
         """
-        if (now - self.last_unknown_sample) < UNKNOWN_SAMPLE_INTERVAL:
-            return
-        self.last_unknown_sample = now
-        count = (int(np.sum(self.map_data == -1))
-                 if self.map_data is not None else 0)
-        self.unknown_history.append((now, count))
-        while (self.unknown_history and
-               now - self.unknown_history[0][0] > UNKNOWN_RATE_WINDOW):
-            self.unknown_history.popleft()
+        if self._is_stuck(now):
+            self.stuck_events_for_goal += 1
+            self._warn(
+                f'No progress toward goal for {STUCK_TIMEOUT:.0f}s '
+                f'(stuck event {self.stuck_events_for_goal} of {MAX_STUCK_EVENTS_PER_GOAL}).')
+            if self.stuck_events_for_goal >= MAX_STUCK_EVENTS_PER_GOAL:
+                self._warn(
+                    f'Stuck too many times on this goal. Abandoning '
+                    f'({self.goal[0]:.2f},{self.goal[1]:.2f}) and choosing a new one.')
+                self._abandon_current_goal()
+                return GoalHealth.ABANDON
 
-    def _unknown_window_stats(self):
-        """Returns (latest_count, drop_over_window) for logging."""
-        if not self.unknown_history:
-            return 0, 0
-        return (self.unknown_history[-1][1],
-                self.unknown_history[0][1] - self.unknown_history[-1][1])
+        if self.needs_replan:
+            self.replan_count_for_goal += 1
+            if self.replan_count_for_goal > MAX_REPLANS_PER_GOAL:
+                self._warn(
+                    f'Replanned {self.replan_count_for_goal} times without progress. '
+                    f'Abandoning ({self.goal[0]:.2f},{self.goal[1]:.2f}).')
+                self._abandon_current_goal()
+                return GoalHealth.ABANDON
+            cg = self._world_to_grid(self.position[0], self.position[1])
+            if self.last_replan_pos is not None:
+                if (abs(cg[0] - self.last_replan_pos[0]) <= 1 and
+                        abs(cg[1] - self.last_replan_pos[1]) <= 1):
+                    self.last_replan_pos = None
+                    self._warn(
+                        f'Replanned but drone has not moved. '
+                        f'Giving up on ({self.goal[0]:.2f},{self.goal[1]:.2f}).')
+                    self._abandon_current_goal()
+                    return GoalHealth.ABANDON
+            self.last_replan_pos = cg
+            return GoalHealth.REPLAN
 
-    def _unknown_rate_stagnant(self, now):
+        return GoalHealth.HEALTHY
+
+    def _navigate_safety_check(self):
         """
-        [33] Returns True when map learning has effectively stopped.
-        Grace period + half-window fill guard prevent false positives.
-        """
-        if self._elapsed_exploration_time(now) < EXPLORATION_MIN_TIME:
-            return False
-        if len(self.unknown_history) < 3:
-            return False
-        oldest_t, oldest_count = self.unknown_history[0]
-        newest_t, newest_count = self.unknown_history[-1]
-        if (newest_t - oldest_t) < UNKNOWN_RATE_WINDOW * 0.5:
-            return False
-        drop = oldest_count - newest_count
-        if drop < UNKNOWN_RATE_MIN_DROP:
-            self.get_logger().warn(
-                f'Stagnation: unknowns changed by {drop} cells over '
-                f'{newest_t-oldest_t:.1f}s (threshold={UNKNOWN_RATE_MIN_DROP})')
-            return True
-        return False
+        Layer 2 — sensor-based safety arbitration.
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # Branch recovery  [34][36]
-    # ══════════════════════════════════════════════════════════════════════════
-
-    def _do_branch_recovery(self, now):
-        """
-        [34][36] Navigate to the nearest branch point and CONSUME it (remove
-        from deque) so it is never re-visited.  Clears unknown_history so the
-        12-second window restarts fresh after arrival at the junction — if the
-        new arm has unknowns they will start filling the history immediately
-        and stagnation will NOT fire until the window fills again.
-        """
-        px, py  = self.position[0], self.position[1]
-        nearest = min(self.branch_points,
-                      key=lambda bp: math.hypot(bp[0]-px, bp[1]-py))
-        dist_bp = math.hypot(nearest[0]-px, nearest[1]-py)
-
-        # [36] Consume immediately — never revisit this exact junction
-        self.branch_points.remove(nearest)
-
-        if dist_bp < 0.4:
-            # Already here — just clear history and return; stagnation counter
-            # will increment again next tick if unknowns truly aren't moving.
-            self.get_logger().info(
-                f'Already at branch point '
-                f'({nearest[0]:.2f},{nearest[1]:.2f}) — consumed, '
-                f'{len(self.branch_points)} left')
-            self.unknown_history.clear()
-            return
-
+<<<<<<< Updated upstream
         self.goal                  = nearest
         self.goal_score            = 0.0
         self.recent_goals.append(self.goal)
@@ -989,20 +1205,57 @@ class FrontierExplorationMultiranger(Node):
         self.last_progress_time    = now
         self.stuck_events_for_goal = 0
         self.replan_count_for_goal = 0
+=======
+        Reads the front ToF range and returns a Safety verdict.  Does NOT
+        set needs_replan directly — the caller decides whether to act based
+        on the verdict and the cooldown state.
+>>>>>>> Stashed changes
 
-        # [36] Clear history so the window restarts after arrival
-        self.unknown_history.clear()
+        Returns:
+          Safety.REPLAN_NEEDED — front wall within OBSTACLE_DIST; a new path
+                                 should be requested if the cooldown allows.
+          Safety.CLEAR         — no obstacle close enough to trigger a replan.
+        """
+        front = self._front_range()
+        if 0.0 < front < OBSTACLE_DIST:
+            self._warn(
+                f'Obstacle {front:.2f}m ahead (threshold {OBSTACLE_DIST}m). '
+                f'Requesting path replan.')
+            return Safety.REPLAN_NEEDED
+        return Safety.CLEAR
 
-        self.get_logger().info(
-            f'Branch recovery → ({nearest[0]:.2f},{nearest[1]:.2f}) '
-            f'd={dist_bp:.2f}m | {len(self.branch_points)} branch(es) remain')
+    def _replan_cooldown_ok(self, now):
+        """Return True when enough time has passed since the last replan."""
+        return (not self.needs_replan and
+                (now - self.last_replan_time) > REPLAN_COOLDOWN)
+
+    def _navigate_execute_replan(self, now):
+        """
+        Layer 2/3 bridge — run A* and update state accordingly.
+
+        Called when either _navigate_goal_health returns REPLAN or
+        _navigate_safety_check returns REPLAN_NEEDED with cooldown ok.
+        Transitions to DONE on failure.
+        """
+        self.needs_replan     = False
+        self.last_replan_time = now
+        self._info(
+            f'REPLAN: replanning path to ({self.goal[0]:.2f},{self.goal[1]:.2f}) '
+            f'replan_count={self.replan_count_for_goal}')
         self._plan_path_to_goal()
-        if self.waypoints:
-            self.state = State.NAVIGATE
+        if not self.waypoints:
+            self._warn(
+                f'REPLAN: failed — no path to '
+                f'({self.goal[0]:.2f},{self.goal[1]:.2f}). '
+                f'Abandoning goal → FIND_FRONTIER.')
+            self.no_path_failures += 1
+            self._abandon_current_goal()
+            self.state = State.FIND_FRONTIER
         else:
-            self.goal = self.goal_score = None
-            self.get_logger().warn(
-                'No A* path to branch point — it was already consumed')
+            self.no_path_failures = 0
+            self._info(
+                f'REPLAN: success — {len(self.waypoints)} waypoints remaining. '
+                f'cur_wp reset to None, will pop on next tick.')
 
     # ══════════════════════════════════════════════════════════════════════════
     # Post-goal 90° spin helper
@@ -1024,54 +1277,24 @@ class FrontierExplorationMultiranger(Node):
     def _handle_no_clusters(self, now):
         """
         Called only when _get_frontier_clusters() genuinely returns empty.
-        Stagnation and branch recovery are handled upstream so this is a
-        last-resort BFS fallback.
+        Last-resort BFS fallback — checks if any unknown cells are still
+        reachable before declaring exploration complete.
         """
-        if self.branch_points:
-            self._do_branch_recovery(now)
-            return
-
         if (now - self.last_reachability_time) < REACHABILITY_CHECK_INTERVAL:
             self._publish_vel(y=self._get_wall_correction())
             return
 
         self.last_reachability_time = now
         if self._has_reachable_unknown():
-            self.get_logger().warn(
-                'No clusters & no branches but BFS finds reachable unknowns — '
+            self._warn(
+                'No clusters but BFS finds reachable unknowns — '
                 'hovering')
             self._publish_vel(y=self._get_wall_correction())
         else:
             elapsed = self._elapsed_exploration_time(now)
-            self.get_logger().info(
+            self._info(
                 f'BFS: no reachable unknowns. t={elapsed:.1f}s → going home')
             self.state = State.DONE
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # Branch point recording  [22]
-    # ══════════════════════════════════════════════════════════════════════════
-
-    def _record_branch_point(self, clusters):
-        px, py   = self.position[0], self.position[1]
-        bearings = [math.degrees(math.atan2(c[1]-py, c[0]-px))
-                    for c in clusters[:5]]
-        max_spread = 0.0
-        for i in range(len(bearings)):
-            for j in range(i+1, len(bearings)):
-                d = abs(bearings[i] - bearings[j])
-                if d > 180.0:
-                    d = 360.0 - d
-                if d > max_spread:
-                    max_spread = d
-        if max_spread < BRANCH_ANGULAR_SPREAD_DEG:
-            return
-        for bx, by in self.branch_points:
-            if math.hypot(px-bx, py-by) < BRANCH_DEDUP_RADIUS:
-                return
-        self.branch_points.append((px, py))
-        self.get_logger().info(
-            f'Branch recorded ({px:.2f},{py:.2f}) '
-            f'spread={max_spread:.0f}° — {len(self.branch_points)} total')
 
     # ══════════════════════════════════════════════════════════════════════════
     # Reachability BFS  [23]
@@ -1126,22 +1349,37 @@ class FrontierExplorationMultiranger(Node):
             dx, dy     = (self.current_wp[0]-self.position[0],
                           self.current_wp[1]-self.position[1])
             dist_to_wp = math.hypot(dx, dy)
-            threshold  = (FINAL_GOAL_DIST if not self.waypoints
-                          else WAYPOINT_REACHED_DIST)
+            threshold  = GOAL_REACHED_DIST
+            self._info(
+                f'FW: cur_wp=({self.current_wp[0]:.2f},{self.current_wp[1]:.2f}) '
+                f'dist={dist_to_wp:.3f}m threshold={threshold:.3f}m '
+                f'pos=({self.position[0]:.2f},{self.position[1]:.2f})')
             if dist_to_wp < threshold:
                 if self.waypoints:
                     self.current_wp = self.waypoints.pop(0)
                     self.replan_count_for_goal = 0
+<<<<<<< Updated upstream
                     self.get_logger().info(
+=======
+                    self._info(
+>>>>>>> Stashed changes
                         f'Waypoint reached. Next waypoint: '
                         f'({self.current_wp[0]:.2f},{self.current_wp[1]:.2f}), '
                         f'{len(self.waypoints)} remaining.')
                 else:
                     self.current_wp = None
+<<<<<<< Updated upstream
                     self.get_logger().info('Reached goal position.')
+=======
+                    self._info('Reached goal position.')
+>>>>>>> Stashed changes
                     return True
         elif self.waypoints:
             self.current_wp = self.waypoints.pop(0)
+            self._info(
+                f'FW: no current_wp, popped first waypoint '
+                f'({self.current_wp[0]:.2f},{self.current_wp[1]:.2f}) '
+                f'{len(self.waypoints)} remaining')
 
         if self.current_wp is not None:
             dx, dy     = (self.current_wp[0]-self.position[0],
@@ -1156,6 +1394,7 @@ class FrontierExplorationMultiranger(Node):
             # the lateral motion.
             vx_b =  math.cos(yaw) * dx + math.sin(yaw) * dy
             vy_b = -math.sin(yaw) * dx + math.cos(yaw) * dy
+<<<<<<< Updated upstream
             speed = min(CRUISE_SPEED, dist_to_wp) / max(dist_to_wp, 1e-3)
 
             # Only apply hard push-away from walls that are dangerously close.
@@ -1179,6 +1418,25 @@ class FrontierExplorationMultiranger(Node):
             # This acts every tick regardless of the replan cooldown, filling
             # the gap where the replan trigger is suppressed but the wall is
             # still closing in.
+=======
+            # Full speed toward intermediate waypoints; ramp down only for
+            # the final waypoint so the drone doesn't slow between every step.
+            if self.waypoints:
+                speed = CRUISE_SPEED / max(dist_to_wp, 1e-3)
+            else:
+                speed = min(CRUISE_SPEED, dist_to_wp) / max(dist_to_wp, 1e-3)
+
+            # Wall guidance — single source of truth for all push-away.
+            # Centering (vy corridor term) is intentionally excluded during
+            # path-following to avoid lateral oscillation; _get_wall_guidance
+            # only returns the push-away components here because centering
+            # couples with the yaw controller.  We use vx and vy push-away
+            # only, and keep speed_scale to slow down near walls.
+            wall_vx, wall_vy, speed_scale = self._get_wall_guidance()
+
+            # Scale down the waypoint-tracking vx when a front wall is close
+            # so the push-away term dominates rather than fighting it.
+>>>>>>> Stashed changes
             front = self._front_range()
             if front < OBSTACLE_DIST:
                 front_scale = max(0.0, (front - WALL_PUSH_DIST) /
@@ -1186,7 +1444,12 @@ class FrontierExplorationMultiranger(Node):
             else:
                 front_scale = 1.0
 
+<<<<<<< Updated upstream
             vx = vx_b * speed * front_scale
+=======
+            vx = vx_b * speed * front_scale + wall_vx
+            vx = max(-CRUISE_SPEED, min(CRUISE_SPEED, vx))
+>>>>>>> Stashed changes
             vy = vy_b * speed
 
             vy = max(-MAX_LATERAL_SPEED,
@@ -1194,8 +1457,22 @@ class FrontierExplorationMultiranger(Node):
 
             ye = self._wrap_angle(math.atan2(dy, dx) - yaw)
             wz = max(-MAX_TURN_RATE, min(MAX_TURN_RATE, 2.0 * ye))
+<<<<<<< Updated upstream
             self._publish_vel(x=vx, y=vy, wz=wz)
         else:
+=======
+
+            self._info(
+                f'FW-VEL: vx_b={vx_b:.3f} vy_b={vy_b:.3f} speed={speed:.3f} '
+                f'front={front:.3f}m front_scale={front_scale:.3f} '
+                f'wall_vx={wall_vx:.3f} wall_vy={wall_vy:.3f} '
+                f'vx={vx:.3f} vy={vy:.3f} wz={wz:.3f} yaw={yaw:.3f}rad '
+                f'right={self._right_range():.3f}m left={self._left_range():.3f}m')
+
+            self._publish_vel(x=vx, y=vy, wz=wz)
+        else:
+            self._info('FW: current_wp is None and no waypoints — publishing zero vel')
+>>>>>>> Stashed changes
             self._publish_vel()
         return False
 
@@ -1220,7 +1497,7 @@ class FrontierExplorationMultiranger(Node):
                 self.scanned_cells.add((nr, nc))
 
     # ══════════════════════════════════════════════════════════════════════════
-    # Coordinate memory / blacklist / scoring
+    # Coordinate memory / scoring
     # ══════════════════════════════════════════════════════════════════════════
 
     def _mark_visited(self, row, col):
@@ -1237,31 +1514,6 @@ class FrontierExplorationMultiranger(Node):
     def _recent_goal_penalty(self, wx, wy):
         return sum(RECENT_GOAL_PENALTY for gx, gy in self.recent_goals
                    if math.hypot(wx-gx, wy-gy) < 0.7)
-
-    def _failed_goal_penalty(self, wx, wy):
-        return sum(FAILED_GOAL_PENALTY for gx, gy in self.failed_goals
-                   if math.hypot(wx-gx, wy-gy) < 0.9)
-
-    def _failed_region_penalty(self, now, wx, wy):
-        return sum(BLACKLIST_PENALTY for r in self.failed_regions
-                   if now <= r["until"] and
-                   math.hypot(wx-r["x"], wy-r["y"]) < FAILED_REGION_RADIUS)
-
-    def _prune_failed_regions(self, now):
-        if self.failed_regions:
-            self.failed_regions = [r for r in self.failed_regions
-                                   if now <= r["until"]]
-
-    def _mark_goal_failed(self, now, goal, reason):
-        if goal is None:
-            return
-        gx, gy = goal
-        self.failed_goals.append(goal)
-        self.failed_regions.append(
-            {"x": gx, "y": gy, "until": now + FAILED_REGION_COOLDOWN})
-        self.get_logger().warn(
-            f'Failed ({gx:.2f},{gy:.2f}) {FAILED_REGION_COOLDOWN:.0f}s: '
-            f'{reason}')
 
     def _count_unknown_near_cluster(self, cluster):
         W, H  = self.map_width, self.map_height
@@ -1305,6 +1557,11 @@ class FrontierExplorationMultiranger(Node):
             return False
         moved = math.hypot(self.position[0]-self.last_progress_pos[0],
                            self.position[1]-self.last_progress_pos[1])
+        self._info(
+            f'STUCK-CHK: moved={moved:.3f}m since last progress '
+            f'(threshold={STUCK_PROGRESS_DIST}m) '
+            f'time_without_progress={now - self.last_progress_time:.1f}s '
+            f'(timeout={STUCK_TIMEOUT}s)')
         if moved > STUCK_PROGRESS_DIST:
             self.last_progress_pos  = (self.position[0], self.position[1])
             self.last_progress_time = now
@@ -1317,6 +1574,7 @@ class FrontierExplorationMultiranger(Node):
         self.current_wp   = None
         self.needs_replan = False
         self.last_replan_pos = None
+        self.no_path_failures = 0
         self.state = State.FIND_FRONTIER
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -1332,14 +1590,18 @@ class FrontierExplorationMultiranger(Node):
             return
         self.last_status_log_time = now
         elapsed = self._elapsed_exploration_time(now)
+<<<<<<< Updated upstream
         rel_x   = self.position[0] - (self.start_pos[0] if self.start_pos else 0.0)
         rel_y   = self.position[1] - (self.start_pos[1] if self.start_pos else 0.0)
         unk, drop = self._unknown_window_stats()
+=======
+>>>>>>> Stashed changes
 
         if self.goal is not None:
             dist_to_goal = math.hypot(
                 self.goal[0] - self.position[0],
                 self.goal[1] - self.position[1])
+<<<<<<< Updated upstream
             goal_s = (f'({self.goal[0]:.2f},{self.goal[1]:.2f}) '
                       f'{dist_to_goal:.2f}m {len(self.waypoints)}wp')
         else:
@@ -1351,6 +1613,17 @@ class FrontierExplorationMultiranger(Node):
             f'F={self._front_range():.2f} R={self._right_range():.2f} L={self._left_range():.2f} | '
             f'goal={goal_s} | '
             f'unk={unk} d={drop:+d} stag={self.consecutive_stagnations}/{MAX_CONSECUTIVE_STAGNATIONS}')
+=======
+            goal_s = f'{dist_to_goal:.2f}m {len(self.waypoints)}wp'
+        else:
+            goal_s = 'none'
+
+        self._info(
+            f'F={self._front_range():.2f} R={self._right_range():.2f} L={self._left_range():.2f} | '
+            f'goal={goal_s} | '
+            f't={elapsed:.1f}s')
+        self._publish_drone_marker()
+>>>>>>> Stashed changes
 
     # ══════════════════════════════════════════════════════════════════════════
     # Wall safety and corridor centering
@@ -1366,65 +1639,56 @@ class FrontierExplorationMultiranger(Node):
         return right, left
 
     def _get_wall_guidance(self):
+        """
+        Returns (vx, vy, speed_scale) — pure push-away on all four axes.
+
+        Centering has been removed: A* already routes through corridor centres
+        via the proximity cost map, so adding a centering term here only
+        introduces lateral oscillation without improving clearance.
+
+        vx          — axial push-away (negative = retreat from front wall,
+                      positive = retreat from back wall).
+        vy          — lateral push-away (positive = away from right wall,
+                      negative = away from left wall).
+        speed_scale — reduced to 0.75 when any side wall is within
+                      WALL_SAFE_DIST, giving the drone a little more reaction
+                      time in tight spaces.
+        """
         if len(self.ranges) < 4:
-            self.last_centering_active = False
-            self.last_corridor_width = None
-            return 0.0, 1.0
+            return 0.0, 0.0, 1.0
 
         r, l = self._side_ranges_for_control()
         vy = 0.0
         speed_scale = 1.0
 
-        # First priority: push away hard from a nearby wall.
+        # Lateral push-away
         if r < WALL_PUSH_DIST:
             vy += min(MAX_LATERAL_SPEED, WALL_KP_SAFETY * (WALL_PUSH_DIST - r))
         if l < WALL_PUSH_DIST:
             vy -= min(MAX_LATERAL_SPEED, WALL_KP_SAFETY * (WALL_PUSH_DIST - l))
 
-        right_seen = r < WALL_CENTRE_MAX_VALID
-        left_seen  = l < WALL_CENTRE_MAX_VALID
+        # Slow down when a side wall is close
+        if min(r, l) < WALL_SAFE_DIST:
+            speed_scale = 0.75
 
-        self.last_centering_active = False
-        self.last_corridor_width = None
-
-        # Second priority: if both walls are visible, actively centre.
-        if right_seen and left_seen:
-            width = r + l
-            self.last_corridor_width = width
-            self.last_centering_active = True
-
-            if width <= TIGHT_CORRIDOR_WIDTH:
-                kp = WALL_KP_CENTRE_TIGHT
-                speed_scale = TIGHT_SPEED_SCALE
-            elif width <= MEDIUM_CORRIDOR_WIDTH:
-                kp = WALL_KP_CENTRE_MEDIUM
-                speed_scale = MEDIUM_SPEED_SCALE
-            else:
-                kp = WALL_KP_CENTRE_WIDE
-                speed_scale = WIDE_SPEED_SCALE
-
-            centering = kp * (r - l)
-            vy += centering
-
-            # Slow down more when clearly off-centre.
-            off_center = abs(r - l)
-            if off_center > OFFCENTER_HARD_BAND:
-                speed_scale *= 0.65
-            elif off_center > OFFCENTER_SLOW_BAND:
-                speed_scale *= 0.82
-        else:
-            # In open spaces or one-sided walls, do not fake centring.
-            # Only keep some slowdown if a side wall is still near.
-            nearest = min(r, l)
-            if nearest < WALL_SAFE_DIST:
-                speed_scale = 0.75
+        # Axial push-away (front/back)
+        front = self._front_range()
+        back  = (self.ranges[0]
+                 if len(self.ranges) > 0 and self.ranges[0] > 0.0
+                 else 999.0)
+        vx = 0.0
+        if front < WALL_PUSH_DIST:
+            vx -= min(CRUISE_SPEED, WALL_KP_SAFETY * (WALL_PUSH_DIST - front))
+        if back < WALL_PUSH_DIST:
+            vx += min(CRUISE_SPEED, WALL_KP_SAFETY * (WALL_PUSH_DIST - back))
 
         vy = max(-MAX_LATERAL_SPEED, min(MAX_LATERAL_SPEED, vy))
+        vx = max(-CRUISE_SPEED, min(CRUISE_SPEED, vx))
         speed_scale = max(0.45, min(1.0, speed_scale))
-        return vy, speed_scale
+        return vx, vy, speed_scale
 
     def _get_wall_correction(self):
-        vy, _ = self._get_wall_guidance()
+        _, vy, _ = self._get_wall_guidance()
         return vy
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -1508,18 +1772,22 @@ class FrontierExplorationMultiranger(Node):
         self.waypoints = []
         self.current_wp = None
         self.needs_replan = False
-        self.last_replan_time = 0.0
         self.last_replan_pos  = None
         self.last_path_cost   = None
         if self.map_data is None or self.goal is None:
-            self.get_logger().warn('A*: no map or goal')
+            self._warn('A*: no map or goal')
             return
 
+<<<<<<< Updated upstream
         # Replace raw frontier centroid with safe standoff point
         nav_goal = self._safe_nav_goal(self.goal[0], self.goal[1])
 
         sr, sc = self._world_to_grid(self.position[0], self.position[1])
         gr, gc = self._world_to_grid(nav_goal[0], nav_goal[1])
+=======
+        sr, sc = self._world_to_grid(self.position[0], self.position[1])
+        gr, gc = self._world_to_grid(self.goal[0], self.goal[1])
+>>>>>>> Stashed changes
 
         # Bug 1 fix: clamp BOTH start and goal to grid bounds.
         # Previously only goal was clamped — an out-of-bounds start causes
@@ -1529,18 +1797,29 @@ class FrontierExplorationMultiranger(Node):
         gr = max(0, min(self.map_height - 1, gr))
         gc = max(0, min(self.map_width  - 1, gc))
 
+<<<<<<< Updated upstream
         self.get_logger().info(
             f'A*: ({sr},{sc})→({gr},{gc})  '
             f'[nav_goal=({nav_goal[0]:.2f},{nav_goal[1]:.2f}) '
             f'frontier=({self.goal[0]:.2f},{self.goal[1]:.2f})]')
+=======
+        self._info(
+            f'A*: ({sr},{sc})→({gr},{gc}) frontier=({self.goal[0]:.2f},{self.goal[1]:.2f})')
+>>>>>>> Stashed changes
 
         nb8 = [(-1,0,1.0),(1,0,1.0),(0,-1,1.0),(0,1,1.0),
                (-1,-1,1.414),(-1,1,1.414),(1,-1,1.414),(1,1,1.414)]
         found = False; path_cost = None
 
+<<<<<<< Updated upstream
         for inflation in range(WALL_INFLATION_CELLS, -1, -1):
             if inflation < WALL_INFLATION_CELLS:
                 self.get_logger().warn(f'A*: reduced inflation={inflation}')
+=======
+        for inflation in range(WALL_INFLATION_CELLS, 0, -1):
+            if inflation < WALL_INFLATION_CELLS:
+                self._warn(f'A*: reduced inflation={inflation}')
+>>>>>>> Stashed changes
 
             passable = self._build_inflated_map(inflation)
             W, H     = self.map_width, self.map_height
@@ -1586,11 +1865,15 @@ class FrontierExplorationMultiranger(Node):
                         heapq.heappush(open_heap, (ng + h, ng, nr, nc))
             if found:
                 if inflation < WALL_INFLATION_CELLS:
+<<<<<<< Updated upstream
                     self.get_logger().warn(f'A*: tight path inflation={inflation}')
+=======
+                    self._warn(f'A*: tight path inflation={inflation}')
+>>>>>>> Stashed changes
                 break
 
         if not found:
-            self.get_logger().warn('A*: no path found')
+            self._warn('A*: no path found')
             return
 
         # Bug 4 fix: include the start cell in the path.
@@ -1608,12 +1891,26 @@ class FrontierExplorationMultiranger(Node):
         wps = [self._grid_to_world(r, c)
                for i, (r, c) in enumerate(path)
                if i % WAYPOINT_SPACING == 0 or i == len(path) - 1]
+<<<<<<< Updated upstream
         wps.append(nav_goal)
+=======
+
+        # Trim the last STANDOFF_WAYPOINTS waypoints so the drone stops
+        # short of the frontier boundary. This replaces the old straight-line
+        # walkback (_safe_nav_goal) which crossed walls in some cases.
+        # At WAYPOINT_SPACING=2 and MAP_RES=0.1m, trimming 2 waypoints gives
+        # ~0.4m standoff, always on the correct side of any wall.
+        # Skip the trim when returning home — we want exact coordinates.
+        if not self.navigating_home and len(wps) > STANDOFF_WAYPOINTS + 1:
+            wps = wps[:-STANDOFF_WAYPOINTS]
+
+>>>>>>> Stashed changes
         self.waypoints      = wps
         self.last_path_cost = path_cost
-        self.get_logger().info(
+        self._info(
             f'A*: {len(path)} cells → {len(wps)} WPs cost={path_cost:.2f}')
         self._publish_waypoint_markers(wps)
+<<<<<<< Updated upstream
 
     def _safe_nav_goal(self, fx, fy):
         """
@@ -1653,6 +1950,11 @@ class FrontierExplorationMultiranger(Node):
                 return (cx, cy)
 
         return (fx, fy)   # fallback
+=======
+        if self.goal is not None:
+            self._publish_goal_marker(self.goal[0], self.goal[1])
+    
+>>>>>>> Stashed changes
 
     # ══════════════════════════════════════════════════════════════════════════
     # Frontier detection + clustering + utility scoring
@@ -1702,25 +2004,15 @@ class FrontierExplorationMultiranger(Node):
         if not fc:
             return []
         clusters = self._cluster_frontier_cells(fc)
-        tuning_steps = [
-            (MIN_FRONTIER_DIST,      MIN_CLUSTER_SIZE,             COVERAGE_MIN_GAIN),
-            (MIN_FRONTIER_DIST/2.0,  MIN_CLUSTER_SIZE,             COVERAGE_MIN_GAIN/2.0),
-            (MIN_FRONTIER_DIST/2.0,  max(1, MIN_CLUSTER_SIZE//2),  COVERAGE_MIN_GAIN/4.0),
-            (0.0,                    1,                            0.0),
-        ]
-        for step_idx, (md, ms, cg) in enumerate(tuning_steps):
-            valid = self._score_clusters(clusters, md, ms, cg, now)
-            if valid:
-                if step_idx > 0:
-                    self.get_logger().warn(
-                        f'Auto-tune step {step_idx}: '
-                        f'min_dist={md:.2f} min_size={ms} '
-                        f'cov_gain={cg:.3f} → {len(valid)} clusters')
-                return valid
-        return []
 
-    def _score_clusters(self, clusters, min_dist, min_size,
-                        coverage_min_gain, now):
+        # Try the preferred minimum size first; relax to the absolute floor
+        # if nothing passes so early-exploration sparse maps still get clusters.
+        valid = self._score_clusters(clusters, MIN_FRONTIER_DIST, MIN_CLUSTER_SIZE, now)
+        if not valid:
+            valid = self._score_clusters(clusters, MIN_FRONTIER_DIST, MIN_VALID_CLUSTER_SIZE, now)
+        return valid
+
+    def _score_clusters(self, clusters, min_dist, min_size, now):
         px, py = self.position[0], self.position[1]
         valid  = []
         for cluster in clusters:
@@ -1734,25 +2026,43 @@ class FrontierExplorationMultiranger(Node):
                 tr += r; tc += c
             avg_r, avg_c = tr/n, tc/n
             row = int(round(avg_r)); col = int(round(avg_c))
-            wx = self.map_origin[0] + (avg_c+0.5)*MAP_RES
-            wy = self.map_origin[1] + (avg_r+0.5)*MAP_RES
+
+            # Snap centroid to the nearest free cell in the cluster if the
+            # raw average lands on a wall or unknown cell. Frontier cells
+            # border walls by definition, so the cluster average is often
+            # pulled onto or into the wall itself. Snapping ensures the goal
+            # handed to A* is always confirmed free space.
+            if (self.map_data is not None and
+                    not (0 <= row < self.map_height and
+                        0 <= col < self.map_width and
+                        self.map_data[row * self.map_width + col] == 0)):
+                best_r, best_c, best_d = row, col, float('inf')
+                for cr, cc in cluster:
+                    if self.map_data[cr * self.map_width + cc] == 0:
+                        d = (cr - avg_r)**2 + (cc - avg_c)**2
+                        if d < best_d:
+                            best_d = d
+                            best_r, best_c = cr, cc
+                row, col = best_r, best_c
+
+            wx = self.map_origin[0] + (col+0.5)*MAP_RES
+            wy = self.map_origin[1] + (row+0.5)*MAP_RES
             dist = math.hypot(wx-px, wy-py)
             if dist < min_dist:
                 continue
             total_unk, new_unk = self._count_unknown_near_cluster(cluster)
-            if total_unk > 0 and coverage_min_gain > 0.0:
-                if new_unk / total_unk < coverage_min_gain:
-                    continue
+            # Use total_unk so clusters are not killed just because their
+            # adjacent unknowns were already marked by the scan coverage tracker.
+            if total_unk * len(cluster) < 2:
+                continue
             path_cost = self._estimate_path_cost(wx, wy)
-            penalty   = (self._visited_penalty(row, col)       +
-                         self._recent_goal_penalty(wx, wy)     +
-                         self._failed_goal_penalty(wx, wy)     +
-                         self._failed_region_penalty(now, wx, wy))
+            penalty   = (self._visited_penalty(row, col)   +
+                        self._recent_goal_penalty(wx, wy))
             score = (SIZE_WEIGHT * n + UNKNOWN_WEIGHT * new_unk -
-                     DISTANCE_WEIGHT * path_cost - penalty)
+                    DISTANCE_WEIGHT * path_cost - penalty)
             valid.append((wx, wy, dist, n,
-                          new_unk, total_unk,
-                          penalty, score, path_cost))
+                        new_unk, total_unk,
+                        penalty, score, path_cost))
         valid.sort(key=lambda c: c[7], reverse=True)
         return valid
 
@@ -1775,6 +2085,39 @@ class FrontierExplorationMultiranger(Node):
     def _wrap_angle(self, angle):
         return (angle + math.pi) % (2*math.pi) - math.pi
 
+<<<<<<< Updated upstream
+=======
+    def _publish_drone_marker(self):
+        """
+        Publish a cyan arrow marker at the drone's current position so it
+        is visible in RViz without needing a URDF or TF setup.
+        In RViz: Add → By topic → /drone_pose → Marker.
+        Fixed frame must be 'map'.
+        """
+        m = Marker()
+        m.header.frame_id    = 'map'
+        m.header.stamp       = self.get_clock().now().to_msg()
+        m.ns                 = 'drone'
+        m.id                 = 0
+        m.type               = Marker.ARROW
+        m.action             = Marker.ADD
+        m.pose.position.x    = float(self.position[0])
+        m.pose.position.y    = float(self.position[1])
+        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        # Encode yaw into the quaternion so the arrow points in the
+        # drone's heading direction.
+        yaw = self.angles[2]
+        m.pose.orientation.x = 0.0
+        m.pose.orientation.y = 0.0
+        m.pose.orientation.z = math.sin(yaw / 2.0)
+        m.pose.orientation.w = math.cos(yaw / 2.0)
+        m.scale.x = 0.30   # arrow length
+        m.scale.y = 0.08   # arrow width
+        m.scale.z = 0.08   # arrow height
+        m.color.r, m.color.g, m.color.b, m.color.a = 0.0, 1.0, 1.0, 1.0  # cyan
+        self.drone_marker_pub.publish(m)
+
+>>>>>>> Stashed changes
     def _publish_goal_marker(self, x, y, home=False):
         """
         Publish a sphere marker at (x, y) to /exploration_goal.
@@ -1800,6 +2143,54 @@ class FrontierExplorationMultiranger(Node):
             m.color.r, m.color.g, m.color.b, m.color.a = 0.0, 1.0, 0.2, 1.0
         self.marker_pub.publish(m)
 
+<<<<<<< Updated upstream
+=======
+    def _publish_possible_goal_marker(self, x, y):
+        """
+        Publish an orange sphere marker at (x, y) to /possible_goal.
+        Shown every time a candidate frontier goal is selected for path
+        planning, before the A* result is known.
+        In RViz: Add > By topic > /possible_goal > Marker.
+        Fixed frame must be 'map'.
+        """
+        m = Marker()
+        m.header.frame_id    = 'map'
+        m.header.stamp       = self.get_clock().now().to_msg()
+        m.ns                 = 'possible_goal'
+        m.id                 = 0
+        m.type               = Marker.SPHERE
+        m.action             = Marker.ADD
+        m.pose.position.x    = float(x)
+        m.pose.position.y    = float(y)
+        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        m.pose.orientation.w = 1.0
+        m.scale.x = m.scale.y = m.scale.z = 0.30
+        m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.5, 0.0, 1.0  # orange
+        self.possible_goal_marker_pub.publish(m)
+
+    def _publish_failed_goal_marker(self, x, y):
+        """
+        Publish a red sphere marker at (x, y) to /failed_goal.
+        Shown only when A* cannot find any path to the selected frontier.
+        In RViz: Add > By topic > /failed_goal > Marker.
+        Fixed frame must be 'map'.
+        """
+        m = Marker()
+        m.header.frame_id    = 'map'
+        m.header.stamp       = self.get_clock().now().to_msg()
+        m.ns                 = 'failed_goal'
+        m.id                 = 0
+        m.type               = Marker.SPHERE
+        m.action             = Marker.ADD
+        m.pose.position.x    = float(x)
+        m.pose.position.y    = float(y)
+        m.pose.position.z    = float(TAKEOFF_HEIGHT)
+        m.pose.orientation.w = 1.0
+        m.scale.x = m.scale.y = m.scale.z = 0.30
+        m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.0, 0.0, 1.0  # red
+        self.failed_goal_marker_pub.publish(m)
+
+>>>>>>> Stashed changes
     def _publish_waypoint_markers(self, waypoints):
         """
         Publish all current A* waypoints to /waypoints as red spheres.

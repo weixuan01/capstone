@@ -25,14 +25,14 @@ def generate_launch_description():
             os.path.join(pkg_project_crazyflie_gazebo, 'launch', 'crazyflie_simulation.launch.py'))
     )
 
-    # start a simple mapper node
-    simple_mapper = Node(
-        package='crazyflie_ros2_multiranger_simple_mapper',
-        executable='simple_mapper_multiranger',
-        name='simple_mapper',
+    # start a shared mapper node
+    shared_mapper = Node(
+        package='crazyflie_ros2_multiranger_shared_mapper',
+        executable='shared_mapper_multiranger',
+        name='shared_mapper',
         output='screen',
         parameters=[
-            {'robot_prefix': 'crazyflie'},
+            {'robot_prefixes': ['/crazyflie']},
             {'use_sim_time': True}
         ]
     )
@@ -41,10 +41,10 @@ def generate_launch_description():
     frontier_exploration = Node(
         package='crazyflie_ros2_multiranger_frontier_exploration',
         executable='frontier_exploration_multiranger',
-        name='frontier_exploration',
+        name='frontier_exploration_multiranger',
         output='screen',
         parameters=[
-            {'robot_prefix': 'crazyflie'},
+            {'robot_prefix': '/crazyflie'},
             {'use_sim_time': True}
         ]
     )
@@ -67,7 +67,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         crazyflie_simulation,
-        simple_mapper,
+        shared_mapper,
         frontier_exploration,
         rviz
         ])
