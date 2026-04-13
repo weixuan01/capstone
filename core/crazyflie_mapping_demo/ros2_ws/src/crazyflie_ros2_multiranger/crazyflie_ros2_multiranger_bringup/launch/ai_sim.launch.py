@@ -51,6 +51,7 @@ def _launch_setup(context, *args, **kwargs):
         output='screen',
         parameters=[
             {'robot_prefix': robot_prefix},
+            {'incoming_twist_topic': '/cmd_vel_raw'},
         ],
     )
 	
