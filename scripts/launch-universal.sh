@@ -37,7 +37,7 @@ BASE_DIR=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")
 ROS2_WS="$BASE_DIR/../core/crazyflie_mapping_demo/ros2_ws"
 BRINGUP_PKG="crazyflie_ros2_multiranger_bringup"   # ROS 2 package containing all launch files
 
-VALID_TYPES=("wallfollowing" "manual" "square" "frontier-exploration" "map-user")
+VALID_TYPES=("wallfollowing" "manual" "square" "frontier-exploration" "map-user" "ai")
 
 # -----------------------------------------------------------------------------
 # LAUNCH FILE MAPPING
@@ -64,6 +64,7 @@ declare -A PER_DRONE_LAUNCH_REAL=(
     ["square"]="square_real.launch.py"
     ["map-user"]="map_user_real.launch.py"
     ["manual"]="none"
+    ["ai"]="ai_real.launch.py"
 )
 
 declare -A PER_DRONE_LAUNCH_SIM=(
@@ -72,6 +73,7 @@ declare -A PER_DRONE_LAUNCH_SIM=(
     ["square"]="square_sim.launch.py"
     ["map-user"]="map_user_sim.launch.py"
     ["manual"]="none"
+    ["ai"]="ai_sim.launch.py"
 )
 
 # -----------------------------------------------------------------------------
@@ -244,14 +246,14 @@ for i in "${!PREFIXES[@]}"; do
 
     # Warn and skip if no launch file is configured for this type+mode
     if [[ "$launch_file" == "none" || -z "$launch_file" ]]; then
-        echo "WARNING: No launch file configured for type '$type' in $MODE mode. Skipping $prefix."
+        echo "WARNING: CONFIGNo launch file configured for type '$type' in $MODE mode. Skipping $prefix."
         continue
     fi
 
     # Warn and skip if the launch file is missing from disk
     DRONE_FILE="$launch_file"
     if [[ -z "$DRONE_FILE" ]]; then
-        echo "WARNING: No launch file configured for type '$type' in $MODE mode. Skipping $prefix."
+        echo "WARNING: MISSING No launch file configured for type '$type' in $MODE mode. Skipping $prefix."
         continue
     fi
 
