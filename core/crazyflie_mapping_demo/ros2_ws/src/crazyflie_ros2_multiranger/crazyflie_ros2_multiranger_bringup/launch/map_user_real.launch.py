@@ -3,137 +3,123 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.actions import IncludeLaunchDescription
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch_ros.actions import Node
 
+
+# =============================================================================
+# map_user_real.launch.py
+#
+# Per-drone launch file for map-user navigation in real mode.
+# Called once per drone by launch-universal.sh.
+#
+# Launches:
+#   - vel_mux           Translates cmd_vel into drone-safe velocity commands
+#   - map_user          Navigates using the shared occupancy map
+#   - map_server        (only if robot_prefix_map is provided) Loads a saved
+#                       map.yaml and publishes it on /map
+#   - lifecycle_manager (only if map_server is launched) Activates map_server
+#
+# NOT launched here (handled by shared_real.launch.py):
+#   - crazyflie_server
+#   - shared_mapper
+#   - rviz
+#
+# Launch arguments:
+#   robot_prefix   ROS 2 namespace for this drone, e.g. /cf1
+#   map_file       (optional) Absolute path to a saved map.yaml.
+#                  Leave empty to start with a blank map.
+# =============================================================================
+
+
 def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'robot_prefix',
+            default_value='/crazyflie',
+            description='ROS 2 namespace for this drone, e.g. /cf1'
+        ),
+        DeclareLaunchArgument(
+            'map_file',
+            default_value='',
+            description='Absolute path to a saved map.yaml. Leave empty for a blank map.'
+        ),
+        OpaqueFunction(function=_launch_setup),
+    ])
 
-    # ── Launch arguments ──────────────────────────────────────────────────────
-    # Pass map_file:=/path/to/map.yaml to pre-load a saved map into the shared
-    # mapper.  Leave empty to start with a blank map (origin-averaging mode).
-    map_file_arg = DeclareLaunchArgument(
-        'map_file',
-        default_value='',
-        description='Absolute path to a previously saved map.yaml. '
-                    'When set the shared mapper loads this map on startup '
-                    'instead of waiting for odom samples.'
-    )
-    map_file = LaunchConfiguration('map_file')
 
-    # Configure ROS nodes for launch
+def _launch_setup(context, *args, **kwargs):
+    robot_prefix = context.launch_configurations['robot_prefix']
+    map_file     = context.launch_configurations['map_file']
+    p = robot_prefix.lstrip('/')
 
-    # Setup project paths'''
-    pkg_project_crazyswarm2 = get_package_share_directory('crazyflie')
-    pkg_multiranger_bringup = get_package_share_directory('crazyflie_ros2_multiranger_bringup')
-    crazyflies_yaml = os.path.join(
-        pkg_multiranger_bringup,
-        'config',
-        'crazyflie_real_crazyswarm2.yaml')
+    nodes = []
 
-    # Start up a crazyflie server through the Crazyswarm2 project
-    crazyflie_real = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([os.path.join(pkg_project_crazyswarm2, 'launch'), '/launch.py']),
-        launch_arguments={'crazyflies_yaml_file': crazyflies_yaml, 'backend': 'cflib', 'mocap': 'False', 'rviz': 'False'}.items()
-    )
-
-    # Start a velocity multiplexer node for the crazyflie
-    crazyflie_vel_mux = Node(
-            package='crazyflie',
-            executable='vel_mux.py',
-            name='vel_mux',
-            output='screen',
-            parameters=[{'hover_height': 0.3},
-                        {'incoming_twist_topic': '/cmd_vel'},
-                        {'robot_prefix': '/crazyflie_user_real'},]    # Unique identifier
-        )
-
-    #=======================================================================
-    # if launching with an already made map, use these 2 nodes
-    map_server = Node(
-        package='nav2_map_server',
-        executable='map_server',
-        name='map_server',
+    # ── Velocity multiplexer ──────────────────────────────────────────────────
+    # Translates incoming cmd_vel commands into drone-safe velocity setpoints.
+    vel_mux = Node(
+        package='crazyflie',
+        executable='vel_mux.py',
+        name=f'vel_mux_{p}',
         output='screen',
         parameters=[
-            {'yaml_filename': '/home/ryan/map.yaml'},
-            {'use_sim_time': False}
-        ]
+            {'hover_height':         0.3},
+            {'incoming_twist_topic': '/cmd_vel'},
+            {'robot_prefix':         robot_prefix},
+        ],
     )
+    nodes.append(vel_mux)
 
-    lifecycle_manager = Node(
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager_map',
-        output='screen',
-        parameters=[
-            {'autostart': True},
-            {'node_names': ['map_server']}
-        ]
-    )
-    #=======================================================================
+    # ── Map user ──────────────────────────────────────────────────────────────
+    # Navigates point-to-point using the occupancy map from shared_mapper.
+    map_user_params = [
+        {'robot_prefix':          robot_prefix},
+        {'use_sim_time':          False},
+        {'delay':                 0.0},
+        {'max_turn_rate':         0.7},
+        {'max_forward_speed':     0.5},
+        {'target_altitude':       0.5},
+        {'alt_kp':                1.2},
+        {'max_vz':                0.4},
+        {'max_obstacle_distance': 0.3},
+    ]
+    if map_file:
+        map_user_params.append({'map_file': map_file})
 
-    # start a map_user node
     map_user = Node(
         package='crazyflie_ros2_multiranger_map_user',
-        executable='map_user',
-        name='map_user',
+        executable='map_user_multiranger',
+        name=f'map_user_{p}',
         output='screen',
-        parameters=[
-            {'robot_prefix': '/crazyflie_user_real'},
-            {'use_sim_time': False},
-            {'delay': 0.0},
-            {'max_turn_rate': 0.7},
-            {'max_forward_speed': 0.5},
-            {'target_altitude': 0.5},
-            {'alt_kp': 1.2},
-            {'max_vz': 0.4},
-            {'max_obstacle_distance': 0.3}
-        ]
+        parameters=map_user_params,
     )
-    
-    shared_mapper = Node(
-    package='crazyflie_ros2_multiranger_shared_mapper',
-    executable='shared_mapper_multiranger',
-    name='shared_mapper',
-    output='screen',
-    parameters=[
-        {'robot_prefixes': ['/crazyflie_user_real']},
-        {'map_file': map_file},
-        {'use_sim_time': False},
-    ]
-    )
+    nodes.append(map_user)
 
-    rviz_config_path = os.path.join(
-        get_package_share_directory('crazyflie_ros2_multiranger_bringup'),
-        'config',
-        'real_mapping.rviz')
+    # ── Nav2 map server (only when a saved map file is provided) ──────────────
+    # map_server loads the .yaml map and publishes it on /map.
+    # lifecycle_manager brings map_server into its active state on startup.
+    if map_file:
+        map_server = Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name=f'map_server_{p}',
+            output='screen',
+            parameters=[
+                {'yaml_filename': map_file},
+                {'use_sim_time':  False},
+            ],
+        )
+        lifecycle_manager = Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name=f'lifecycle_manager_map_{p}',
+            output='screen',
+            parameters=[
+                {'autostart':  True},
+                {'node_names': [f'map_server_{p}']},
+            ],
+        )
+        nodes.append(map_server)
+        nodes.append(lifecycle_manager)
 
-    rviz = Node(
-            package='rviz2',
-            namespace='',
-            executable='rviz2',
-            name='rviz2',
-            arguments=['-d', rviz_config_path],
-            parameters=[{
-                "use_sim_time": False
-            }]
-            )
-
-    return LaunchDescription([
-        crazyflie_real,
-        crazyflie_vel_mux,
-        #simple_mapper,
-        shared_mapper,
-        #frontier_exploration,
-
-        map_user,
-        rviz,
-
-        map_server,
-        lifecycle_manager
-        ])
+    return nodes

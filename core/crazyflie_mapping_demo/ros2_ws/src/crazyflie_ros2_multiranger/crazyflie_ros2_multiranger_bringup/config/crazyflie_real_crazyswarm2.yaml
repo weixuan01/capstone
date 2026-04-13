@@ -1,9 +1,16 @@
 # named list of all robots
 robots:
-  crazyflie_real:
-    enabled: true
+  cf1:
+    enabled: false
     uri: radio://0/80/2M/E7E7E7E7E7
     initial_position: [0.0, 0.0, 0.0]
+    type: cf21  # see robot_types
+    
+    
+  cf2:
+    enabled: true
+    uri: radio://0/80/2M/E7E7E7E7E6
+    initial_position: [1.0, 0.0, 0.0]
     type: cf21  # see robot_types
     
   crazyflie_user_real:
@@ -40,4 +47,4 @@ all:
       controller: 1 # 1: PID, 2: mellinger
   broadcasts:
     num_repeats: 15 # number of times broadcast commands are repeated
-    delay_between_repeats_ms: 1 # delay in milliseconds between individual repeats
+    delay_between_repeats_ms: 1 # delay in milliseconds between individual repeats	

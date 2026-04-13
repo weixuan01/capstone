@@ -68,11 +68,6 @@
       </link>
     </model>
     
-    <include>
-      <uri>model://crazyflie</uri>
-      <name>crazyflie</name>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
 
     <model name="maze">
       <pose>-8 5 0 0 0 0</pose>	

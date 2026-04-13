@@ -21,7 +21,7 @@ class VelMux(Node):
         super().__init__('vel_mux')
         self.declare_parameter('hover_height', 0.5)
         self.declare_parameter('robot_prefix', '/cf')
-        self.declare_parameter('incoming_twist_topic', '/cmd_vel')
+        self.declare_parameter('incoming_twist_topic', '/cmd_vel_safe')
 
         self.hover_height  = self.get_parameter('hover_height').value
         robot_prefix  = self.get_parameter('robot_prefix').value
@@ -29,7 +29,7 @@ class VelMux(Node):
         
         self.subscription = self.create_subscription(
             Twist,
-            incoming_twist_topic,
+            robot_prefix + incoming_twist_topic,
             self.cmd_vel_callback,
             10)
         self.msg_cmd_vel = Twist()

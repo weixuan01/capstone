@@ -19,9 +19,9 @@ class ControlServices(Node):
         incoming_twist_topic = self.get_parameter('incoming_twist_topic').value
         max_ang_z_rate = self.get_parameter('max_ang_z_rate').value
 
-        self.publisher_ = self.create_publisher(Twist, robot_prefix + incoming_twist_topic, 10)
+        self.publisher_ = self.create_publisher(Twist, robot_prefix + '/cmd_vel', 10)
         self.subscriber = self.create_subscription(Odometry, robot_prefix + '/odom', self.odometry_callback, 10)
-        self.subscriber = self.create_subscription(Twist, incoming_twist_topic, self.cmd_vel_callback, 10)
+        self.subscriber = self.create_subscription(Twist, robot_prefix + incoming_twist_topic, self.cmd_vel_callback, 10)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
         self.takeoff_command = False
@@ -37,52 +37,47 @@ class ControlServices(Node):
         height_command = msg.linear.z
         new_cmd_msg = Twist()
 
-        # If the drone is flying, only allow to transfer the twist message
-        if self.is_flying:
-            new_cmd_msg.linear.x = msg.linear.x
-            new_cmd_msg.linear.y = msg.linear.y
-            new_cmd_msg.linear.z = msg.linear.z
-            new_cmd_msg.angular.x = msg.angular.x
-            new_cmd_msg.angular.y = msg.angular.y
-            new_cmd_msg.angular.z = msg.angular.z
+        # Always forward x/y/angular commands
+        new_cmd_msg.linear.x = msg.linear.x
+        new_cmd_msg.linear.y = msg.linear.y
+        new_cmd_msg.angular.x = msg.angular.x
+        new_cmd_msg.angular.y = msg.angular.y
+        new_cmd_msg.angular.z = msg.angular.z
 
-        # If not flying and receiving a velocity height command, takeoff
+        # If not flying and receiving a positive height command, trigger takeoff
         if height_command > 0 and not self.is_flying:
             new_cmd_msg.linear.z = 0.5
             if self.current_pose.position.z > self.takeoff_height:
-                # stop going up if height is reached
                 new_cmd_msg.linear.z = 0.0
-                self.teleop_cmd.linear.z = 0.0
                 self.is_flying = True
+                self.desired_height = self.current_pose.position.z
+                self.keep_height = True
+                self.teleop_cmd.linear.z = 0.0
                 self.get_logger().info('Takeoff completed')
 
-        # If flying and if the height command is negative, and it is below a certain height
-        # then consider it a land
+        # If flying and height command is negative and drone is low, land
         if height_command < 0 and self.is_flying:
+            new_cmd_msg.linear.z = height_command
             if self.current_pose.position.z < 0.1:
                 new_cmd_msg.linear.z = 0.0
                 self.is_flying = False
                 self.keep_height = False
                 self.get_logger().info('Landing completed')
 
-        # Cap the angular rate command in the z axis
+        # Cap the angular rate command in z axis
         if abs(msg.angular.z) > self.max_ang_z_rate:
-            new_cmd_msg.angular.z = self.max_ang_z_rate * abs(msg.angular.z)/msg.angular.z
+            new_cmd_msg.angular.z = self.max_ang_z_rate * abs(msg.angular.z) / msg.angular.z
 
-        # If there is no control in height and the drone is flying, control and maintain the height
+        # Maintain height when flying and no height command
         tolerance = 1e-7
-        if abs(height_command) < tolerance and self.is_flying:
-            if not self.keep_height:
-                self.desired_height = self.current_pose.position.z
-                self.keep_height = True
-            else:
-                error = self.desired_height - self.current_pose.position.z
-                new_cmd_msg.linear.z = error
-
-        # If there is control in height and the drone is flying, stop maintaining the height
-        if abs(height_command) > tolerance and self.is_flying:
-            if self.keep_height:
-                self.keep_height = False
+        if self.is_flying:
+            if abs(height_command) < tolerance:
+                if not self.keep_height:
+                    self.desired_height = self.current_pose.position.z
+                    self.keep_height = True
+                else:
+                    error = self.desired_height - self.current_pose.position.z
+                    new_cmd_msg.linear.z = max(-0.5, min(0.5, error * 3.0))
 
         self.publisher_.publish(new_cmd_msg)
 
@@ -90,7 +85,6 @@ class ControlServices(Node):
         self.current_pose = msg.pose.pose
 
     def takeoff_callback(self, request, response):
-
         self.takeoff_command = True
         response.success = True
         return response
@@ -101,11 +95,8 @@ class ControlServices(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
     control_services = ControlServices()
-
     rclpy.spin(control_services)
-
     rclpy.shutdown()
 
 

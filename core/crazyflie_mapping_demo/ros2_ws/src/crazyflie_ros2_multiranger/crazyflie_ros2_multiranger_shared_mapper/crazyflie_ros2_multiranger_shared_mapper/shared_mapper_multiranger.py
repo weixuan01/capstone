@@ -198,26 +198,14 @@ class SharedMapperMultiranger(Node):
         self.angles[prefix][2] = euler[2]
         self.position_updates[prefix] = True
 
-        # Accumulate odom samples from any drone until we have enough to
-        # compute a stable average, then commit the origin exactly once.
-        # This prevents a single noisy startup reading from locking in a
-        # bad origin and causing RViz to reinitialise on every map publish.
         if not self.origin_set:
-            self._origin_samples.append(
-                (msg.pose.pose.position.x, msg.pose.pose.position.y)
+            self.map_origin_x = msg.pose.pose.position.x - GLOBAL_SIZE_X / 2.0
+            self.map_origin_y = msg.pose.pose.position.y - GLOBAL_SIZE_Y / 2.0
+            self.origin_set = True
+            self.get_logger().info(
+                f"Map origin set to ({self.map_origin_x:.3f}, {self.map_origin_y:.3f}) "
+                f"from first odom sample ({prefix})"
             )
-            if len(self._origin_samples) >= self._ORIGIN_SAMPLE_COUNT:
-                avg_x = sum(s[0] for s in self._origin_samples) / self._ORIGIN_SAMPLE_COUNT
-                avg_y = sum(s[1] for s in self._origin_samples) / self._ORIGIN_SAMPLE_COUNT
-                self.map_origin_x = avg_x - GLOBAL_SIZE_X / 2.0
-                self.map_origin_y = avg_y - GLOBAL_SIZE_Y / 2.0
-                self.origin_set = True
-                self.get_logger().info(
-                    f"Map origin committed to "
-                    f"({self.map_origin_x:.3f}, {self.map_origin_y:.3f}) "
-                    f"from {self._ORIGIN_SAMPLE_COUNT}-sample average "
-                    f"(last sample from {prefix})"
-                )
 
     def _mapping_active_callback(self, msg, prefix=''):
         if not msg.data and self.mapping_active[prefix]:

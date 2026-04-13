@@ -1,4 +1,4 @@
-    #!/usr/bin/env python3
+#!/usr/bin/env python3
 
 """
 Autonomous Frontier-Based Explorer for Crazyflie
@@ -23,7 +23,7 @@ from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile
 
 from nav_msgs.msg import Odometry, OccupancyGrid
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Point
 from std_srvs.srv import Trigger
 from visualization_msgs.msg import Marker, MarkerArray
 
@@ -40,7 +40,7 @@ GLOBAL_SIZE_Y = 20.0
 MAP_RES       = 0.1
 
 # ── Flight parameters ─────────────────────────────────────────────────────────
-TAKEOFF_HEIGHT         = 0.0005
+TAKEOFF_HEIGHT         = 0.3
 TAKEOFF_DELAY          = 3.0
 CRUISE_SPEED           = 0.3 #0.3
 MAX_TURN_RATE          = 0.2
@@ -65,7 +65,7 @@ PROXIMITY_COST_RADIUS  = 10#10   # cells — BFS radius for proximity cost map;
 # ── Wall avoidance parameters ─────────────────────────────────────────────────
 # ── Frontier filtering ────────────────────────────────────────────────────────
 MIN_CLUSTER_SIZE       = 15   # preferred minimum cluster size; relaxed to MIN_VALID_CLUSTER_SIZE if no clusters pass
-MIN_VALID_CLUSTER_SIZE = 3    # absolute floor
+MIN_VALID_CLUSTER_SIZE = 2    # absolute floor
 
 # ── Wall safety ───────────────────────────────────────────────────────────────
 # Push the drone away from any wall closer than WALL_PUSH_DIST on all four
@@ -85,11 +85,33 @@ VISITED_CELL_RADIUS = 2
 RECENT_GOAL_MEMORY  = 8
 
 # ── Utility scoring weights ───────────────────────────────────────────────────
-DISTANCE_WEIGHT     = 1.6 # tested with 1.3, revert to this if in doulbt
+DISTANCE_WEIGHT     = 1.6 
 SIZE_WEIGHT         = 1.6
 UNKNOWN_WEIGHT      = 2.0
 VISIT_PENALTY       = 0.5 #0.9
 RECENT_GOAL_PENALTY = 0.0 #10.0
+
+# ── Peer claim coordination ───────────────────────────────────────────────────
+# Gradient-based separation: frontiers far from all peer goals get a bonus,
+# frontiers close to a peer goal get a penalty.  The modifier is a smooth
+# tanh S-curve so there is no hard radius threshold to tune per map.
+#
+# Formula per peer:
+#   modifier = PEER_GRADIENT_WEIGHT * tanh(dist / PEER_GRADIENT_SCALE - 1.0)
+#
+# At dist == PEER_GRADIENT_SCALE the modifier is zero (neutral).
+# Below that distance it goes negative (penalty, min ~ -PEER_GRADIENT_WEIGHT).
+# Above that distance it goes positive (bonus, max ~ +PEER_GRADIENT_WEIGHT).
+#
+# PEER_GRADIENT_SCALE  — crossover distance in metres; set to roughly half the
+#                        expected room width.  2.0 m suits most indoor maps.
+# PEER_GRADIENT_WEIGHT — maximum bonus/penalty magnitude in score units.
+#                        6.0 is roughly equal to SIZE_WEIGHT * 4 cells, enough
+#                        to reliably redirect a drone without hard-blocking it.
+PEER_GRADIENT_SCALE     = 0.5   # metres — neutral crossover distance
+PEER_GRADIENT_WEIGHT    = 10.0   # maximum score bonus/penalty magnitude
+PEER_CLAIM_TIMEOUT      = 5.0   # seconds — ignore stale claims (crashed/landed)
+PEER_CLAIM_PUB_INTERVAL = 0.5   # seconds between goal publications
 
 # ── Goal commitment / hysteresis ─────────────────────────────────────────────
 GOAL_KEEP_RATIO       = 0.85
@@ -184,6 +206,14 @@ class FrontierExplorationMultiranger(Node):
         self.visited_counts = {}
         self.recent_goals   = deque(maxlen=RECENT_GOAL_MEMORY)
 
+        # ── Peer claim state ──────────────────────────────────────────────────
+        # Maps sender identity hash (float) → (goal_x, goal_y, timestamp)
+        self.peer_goals: dict          = {}
+        self.last_claim_pub_time: float = 0.0
+        # Unique float identity derived from robot_prefix so each drone can
+        # filter its own echoed messages off the shared /peer_claims topic.
+        self._claim_id = float(hash(robot_prefix) % 1_000_000)
+
         self.scanned_cells = set()                          # [12]
         self.last_reachability_time = 0.0                   # [25]
         self.zero_cluster_count = 0                         # successive FIND_FRONTIER ticks with 0 clusters
@@ -218,13 +248,22 @@ class FrontierExplorationMultiranger(Node):
         self.create_subscription(
             OccupancyGrid, '/map', self.map_callback, map_qos)
 
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.marker_pub = self.create_publisher(Marker, '/exploration_goal', 10)
+        self.cmd_pub = self.create_publisher(Twist, robot_prefix + '/cmd_vel_raw', 10) 
+        self.marker_pub = self.create_publisher(Marker, robot_prefix + '/exploration_goal', 10)
         self.waypoint_marker_pub = self.create_publisher(
-            MarkerArray, '/waypoints', 10)
-        self.drone_marker_pub = self.create_publisher(Marker, '/drone_pose', 10)
-        self.possible_goal_marker_pub = self.create_publisher(Marker, '/possible_goal', 10)
-        self.failed_goal_marker_pub = self.create_publisher(Marker, '/failed_goal', 10)
+            MarkerArray, robot_prefix + '/waypoints', 10)
+        self.drone_marker_pub = self.create_publisher(Marker, robot_prefix + '/drone_pose', 10)
+        self.possible_goal_marker_pub = self.create_publisher(Marker, robot_prefix + '/possible_goal', 10)
+        self.failed_goal_marker_pub = self.create_publisher(Marker, robot_prefix + '/failed_goal', 10)
+
+        # ── Peer claim pub/sub ────────────────────────────────────────────────
+        # All drones publish to and subscribe from the single shared topic
+        # /peer_claims.  Each message is a Point where:
+        #   x, y = claimed goal world coordinates (0,0 means no active goal)
+        #   z    = sender identity hash (float) for self-filtering
+        self.claim_pub = self.create_publisher(Point, '/peer_claims', 10)
+        self.create_subscription(Point, '/peer_claims', self._peer_claim_callback, 10)
+
         self.create_service(
             Trigger, robot_prefix + '/stop_exploration', self.stop_callback)
         self.timer = self.create_timer(0.1, self.timer_callback)
@@ -302,6 +341,23 @@ class FrontierExplorationMultiranger(Node):
         response.success = True
         return response
 
+    def _peer_claim_callback(self, msg: Point):
+        """Receive a peer drone's claimed goal off /peer_claims.
+
+        msg.x, msg.y  world coordinates of the peer's current goal.
+                      Both zero means the peer has no active goal.
+        msg.z         sender identity hash — used to filter out our own
+                      echoed messages and to key the peer_goals dict.
+        """
+        if abs(msg.z - self._claim_id) < 0.5:
+            return   # own message echoed back — discard
+        now = self.get_clock().now().nanoseconds * 1e-9
+        key = msg.z
+        if msg.x == 0.0 and msg.y == 0.0:
+            self.peer_goals.pop(key, None)
+        else:
+            self.peer_goals[key] = (msg.x, msg.y, now)
+
     # ══════════════════════════════════════════════════════════════════════════
     # Main state machine
     # ══════════════════════════════════════════════════════════════════════════
@@ -320,10 +376,32 @@ class FrontierExplorationMultiranger(Node):
     def _state_machine(self, now):
         self._log_status(now)
 
+        # ── Publish peer claim ────────────────────────────────────────────────
+        # Broadcast this drone's current goal to all peers at a fixed interval
+        # so they can penalise nearby frontiers in their own scoring.
+        # Publishing x=y=0 signals that this drone has no active claim so peers
+        # do not permanently reserve the region after a goal is cleared.
+        if now - self.last_claim_pub_time > PEER_CLAIM_PUB_INTERVAL:
+            self.last_claim_pub_time = now
+            claim = Point()
+            if self.goal is not None and not self.navigating_home:
+                claim.x = float(self.goal[0])
+                claim.y = float(self.goal[1])
+            else:
+                claim.x = 0.0
+                claim.y = 0.0
+            claim.z = self._claim_id
+            self.claim_pub.publish(claim)
+
         # ── TAKEOFF ───────────────────────────────────────────────────────────
         if self.state == State.TAKEOFF:
             self._publish_vel(z=TAKEOFF_HEIGHT)
-            if now - self.start_time > TAKEOFF_DELAY:
+            # Wait until the drone has physically reached hover height AND
+            # the minimum delay has elapsed. The control node requires a
+            # positive linear.z to trigger its internal takeoff sequence;
+            # it will not relay other commands until is_flying is True.
+            airborne = self.position[2] >= TAKEOFF_HEIGHT * 0.8
+            if airborne and now - self.start_time > TAKEOFF_DELAY:
                 self.start_pos         = [self.position[0], self.position[1]]
                 self._info( f'Home captured: ' f'({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
                 self._info(  'Takeoff complete. Rotating 100° to build initial map before exploring.')
@@ -900,6 +978,30 @@ class FrontierExplorationMultiranger(Node):
         return sum(RECENT_GOAL_PENALTY for gx, gy in self.recent_goals
                    if math.hypot(wx-gx, wy-gy) < 0.7)
 
+    def _peer_gradient_modifier(self, wx, wy):
+        """Return a signed score modifier based on distance to all active peer
+        goals.  Positive = bonus (frontier is far from peers, good to explore).
+        Negative = penalty (frontier is close to a peer's goal, avoid overlap).
+
+        Uses a tanh S-curve per peer:
+            modifier = PEER_GRADIENT_WEIGHT * tanh(dist / PEER_GRADIENT_SCALE - 1.0)
+
+        At dist == PEER_GRADIENT_SCALE the contribution is zero.
+        Contributions from multiple peers are summed, so a frontier equidistant
+        from two peers that are both nearby gets a stronger penalty.
+
+        Stale claims older than PEER_CLAIM_TIMEOUT are skipped so a crashed or
+        landed drone does not permanently affect scoring."""
+        now = self.get_clock().now().nanoseconds * 1e-9
+        modifier = 0.0
+        for gx, gy, t in self.peer_goals.values():
+            if (now - t) > PEER_CLAIM_TIMEOUT:
+                continue
+            dist = math.hypot(wx - gx, wy - gy)
+            modifier += PEER_GRADIENT_WEIGHT * math.tanh(
+                dist / max(PEER_GRADIENT_SCALE, 1e-3) - 1.0)
+        return modifier
+
     def _count_unknown_near_cluster(self, cluster):
         W, H  = self.map_width, self.map_height
         total = new = 0
@@ -1348,10 +1450,11 @@ class FrontierExplorationMultiranger(Node):
             if total_unk * len(cluster) < 2:
                 continue
             path_cost = self._estimate_path_cost(wx, wy)
-            penalty   = (self._visited_penalty(row, col)   +
-                        self._recent_goal_penalty(wx, wy))
+            penalty   = (self._visited_penalty(row, col) +
+                         self._recent_goal_penalty(wx, wy))
+            peer_mod  = self._peer_gradient_modifier(wx, wy)
             score = (SIZE_WEIGHT * n + UNKNOWN_WEIGHT * new_unk -
-                    DISTANCE_WEIGHT * path_cost - penalty)
+                    DISTANCE_WEIGHT * path_cost - penalty + peer_mod)
             valid.append((wx, wy, dist, n,
                         new_unk, total_unk,
                         penalty, score, path_cost))
