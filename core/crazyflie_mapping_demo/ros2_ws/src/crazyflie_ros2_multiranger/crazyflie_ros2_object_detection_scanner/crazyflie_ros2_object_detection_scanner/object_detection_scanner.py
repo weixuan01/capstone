@@ -50,6 +50,20 @@ drones.  Mapping is always on — no gating flag.  The shared_mapper node
 subscribes to /{prefix}/scan separately and processes those scans the
 whole time the drone is in the air.
 
+Digit markers from AI deck
+--------------------------
+If the drone is fitted with an AI deck running aideck_udp_streamer, that
+streamer publishes Int32 digit predictions on
+/{prefix}/aideck/digit_prediction whenever its ONNX model recognises a
+digit with confidence above its threshold.  This node pairs each
+prediction with the current front-multiranger hit to estimate where on
+the wall the digit is, then plants a TEXT_VIEW_FACING marker in the map
+frame at that location, publishing the accumulating list on
+/{prefix}/digit_markers for RViz.  Markers are suppressed during
+TAKEOFF and LANDING (unstable ranger readings) and deduplicated within
+a DIGIT_DEDUP_DIST radius to avoid stacking duplicates when the same
+wall digit is seen repeatedly during a 360 deg spin.
+
 Battery voltage (requirement 4)
 -------------------------------
 Battery is handled exactly like frontier-exploration drones — the
@@ -70,6 +84,12 @@ from geometry_msgs.msg import Twist, Point
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from visualization_msgs.msg import Marker, MarkerArray
+from std_msgs.msg import Int32
+from builtin_interfaces.msg import Duration
+from std_msgs.msg import Int32
+from builtin_interfaces.msg import Duration
+from std_msgs.msg import Int32
+from builtin_interfaces.msg import Duration
 
 import tf_transformations
 import math
@@ -86,17 +106,17 @@ TAKEOFF_HEIGHT     = 0.3
 TAKEOFF_DELAY      = 3.0
 CRUISE_SPEED       = 0.3
 MAX_TURN_RATE      = 0.5
-OBSTACLE_DIST      = 0.15
-GOAL_REACHED_DIST  = 0.10
-REPLAN_COOLDOWN    = 3.5
+OBSTACLE_DIST      = 0.25
+GOAL_REACHED_DIST  = 0.15
+REPLAN_COOLDOWN    = 5.0
 WALL_INFLATION_CELLS  = 2
 PROXIMITY_COST_WEIGHT = 2
 PROXIMITY_COST_RADIUS = 5
 WAYPOINT_SPACING      = 2
 
 # ── Wall avoidance ────────────────────────────────────────────────────────────
-WALL_PUSH_DIST      = 0.1
-WALL_SAFE_DIST      = 0.3
+WALL_PUSH_DIST      = 0.2
+WALL_SAFE_DIST      = 0.2
 WALL_FILTER_ALPHA   = 0.3
 WALL_KP_SAFETY      = 0.3
 MAX_LATERAL_SPEED   = 0.24
@@ -107,9 +127,18 @@ SPIN_TARGET = 2.0 * math.pi   # full 360 for object detection coverage
 
 # ── Stuck detector ────────────────────────────────────────────────────────────
 STUCK_PROGRESS_DIST       = 0.10
-STUCK_TIMEOUT             = 5.0
-MAX_STUCK_EVENTS_PER_GOAL = 3
-MAX_REPLANS_PER_GOAL      = 3
+STUCK_TIMEOUT             = 15.0
+MAX_STUCK_EVENTS_PER_GOAL = 4
+MAX_REPLANS_PER_GOAL      = 6
+
+# ── Digit marker placement ────────────────────────────────────────────────────
+# Predictions closer than this distance to an existing marker are suppressed
+# to avoid stacking multiple labels at the same wall digit.
+DIGIT_DEDUP_DIST = 0.20   # metres
+# Camera + multiranger max useful range for pairing predictions with walls.
+# Readings beyond this distance are treated as "no wall in front" and the
+# digit prediction is dropped rather than placed at max-range.
+DIGIT_RANGE_MAX  = 3.5    # metres
 
 
 class State(Enum):
@@ -176,6 +205,17 @@ class ObjectDetectionScanner(Node):
         self.scanning_start_time  = None
         self.last_status_log_time = 0.0
 
+        # ── Digit marker state ────────────────────────────────────────────────
+        # The AI deck streamer publishes digit predictions on
+        # /{prefix}/aideck/digit_prediction.  We stash the latest prediction
+        # here and, on each scan callback (while the drone is airborne in a
+        # stable state), pair it with the front-multiranger hit to estimate
+        # where on the wall the digit is.  See _maybe_place_digit_marker.
+        self.pending_digit             = None
+        self.placed_digit_positions    = []   # [(wx, wy), ...] for dedup
+        self.digit_markers             = []   # accumulating list of Marker
+        self.next_digit_marker_id      = 0
+
         # ── ROS interface ─────────────────────────────────────────────────────
         self.create_subscription(
             Odometry, robot_prefix + '/odom', self._odom_cb, 10)
@@ -205,6 +245,15 @@ class ObjectDetectionScanner(Node):
             Point, robot_prefix + '/assigned_goal',
             self._recall_compat_cb, 10)
 
+        # Digit predictions from the AI deck streamer.
+        # The streamer publishes an Int32 on /{prefix}/aideck/digit_prediction
+        # whenever its ONNX model sees a digit with confidence above its
+        # threshold.  We stash the latest one and the scan callback decides
+        # whether and where to plant it as a marker on the shared map.
+        self.create_subscription(
+            Int32, robot_prefix + '/aideck/digit_prediction',
+            self._digit_prediction_cb, 10)
+
         self.cmd_pub          = self.create_publisher(
             Twist, robot_prefix + '/cmd_vel_raw', 10)
         self.status_pub       = self.create_publisher(
@@ -215,6 +264,8 @@ class ObjectDetectionScanner(Node):
             MarkerArray, robot_prefix + '/waypoints', 10)
         self.drone_marker_pub = self.create_publisher(
             Marker, robot_prefix + '/drone_pose', 10)
+        self.digit_marker_pub = self.create_publisher(
+            MarkerArray, robot_prefix + '/digit_markers', 10)
 
         self.create_service(
             Trigger, robot_prefix + '/stop_exploration', self._stop_cb)
@@ -254,6 +305,19 @@ class ObjectDetectionScanner(Node):
             self.filtered_left = (left if self.filtered_left is None else
                 WALL_FILTER_ALPHA * left +
                 (1 - WALL_FILTER_ALPHA) * self.filtered_left)
+
+        # Pair any pending digit prediction with the current front-ranger hit.
+        # This runs on every scan message; the placement function itself
+        # decides whether to actually plant a marker based on state and dedup.
+        self._maybe_place_digit_marker()
+
+    def _digit_prediction_cb(self, msg: Int32):
+        """
+        Stash the latest digit prediction from the AI deck streamer.
+        The scan callback pairs it with the front-ranger reading and
+        decides whether to plant a marker.
+        """
+        self.pending_digit = int(msg.data)
 
     def _map_cb(self, msg):
         self.map_data   = np.array(msg.data, dtype=np.int8)
@@ -806,6 +870,96 @@ class ObjectDetectionScanner(Node):
 
     def _wrap_angle(self, a):
         return (a + math.pi) % (2 * math.pi) - math.pi
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Digit markers
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # The AI deck streamer publishes Int32 digit predictions when its ONNX
+    # model is confident.  We pair each prediction with the current front-
+    # multiranger hit to estimate where on the wall the digit is, then plant
+    # a TEXT_VIEW_FACING marker in the map frame at that point.
+    #
+    # Gating:
+    #   - Only runs while airborne in a stable state (not TAKEOFF or LANDING).
+    #     TAKEOFF has the drone ascending with unstable ranger readings near
+    #     the floor; LANDING has the same near the end.  Everywhere else
+    #     (WAIT_GOAL, NAVIGATE, SPINNING, DONE) the drone is at cruise altitude
+    #     and the ranger readings are usable.
+    #   - The front ranger must report a valid hit within DIGIT_RANGE_MAX.
+    #     If there's no wall in front (ranger reports 0.0, inf, or a value
+    #     beyond the useful range) the prediction is dropped — better to
+    #     miss a digit than to plant a marker at an arbitrary location.
+    #
+    # Dedup:
+    #   Predictions whose estimated world position falls within
+    #   DIGIT_DEDUP_DIST of an existing marker are suppressed.  This avoids
+    #   stacking 10+ duplicate labels at the same wall digit during a spin
+    #   (the streamer publishes at ~1 Hz and a 360 deg spin takes ~12 s).
+
+    def _maybe_place_digit_marker(self):
+        if self.pending_digit is None:
+            return
+
+        # State gate — skip TAKEOFF/LANDING only.
+        if self.state in (State.TAKEOFF, State.LANDING):
+            return
+
+        # Front ranger must be a valid, useful-range hit.
+        front = self._front_range()
+        if front <= 0.0 or front >= DIGIT_RANGE_MAX:
+            # No wall in front within useful range — can't place this digit.
+            # Leave pending_digit set; the next scan callback may find a wall.
+            return
+
+        # Compute the front-ranger hit point in the world frame.
+        # The front ranger points along the drone's body +x axis.
+        yaw = self.angles[2]
+        wx  = self.position[0] + math.cos(yaw) * front
+        wy  = self.position[1] + math.sin(yaw) * front
+
+        # Dedup against previously-placed markers.
+        for (px, py) in self.placed_digit_positions:
+            if math.hypot(wx - px, wy - py) < DIGIT_DEDUP_DIST:
+                # Too close to an existing marker — drop this prediction.
+                self.pending_digit = None
+                return
+
+        # Fresh location — plant a new marker.
+        self._add_digit_marker(wx, wy, self.pending_digit)
+        self.placed_digit_positions.append((wx, wy))
+        self.get_logger().info(
+            f'Digit "{self.pending_digit}" placed at '
+            f'({wx:.2f}, {wy:.2f}) from {self._front_range():.2f}m front hit.')
+        self.pending_digit = None
+        self._publish_digit_markers()
+
+    def _add_digit_marker(self, wx: float, wy: float, digit: int):
+        m = Marker()
+        m.header.frame_id    = 'map'
+        m.header.stamp       = self.get_clock().now().to_msg()
+        m.ns                 = 'digit_labels'
+        m.id                 = self.next_digit_marker_id
+        self.next_digit_marker_id += 1
+        m.type               = Marker.TEXT_VIEW_FACING
+        m.action             = Marker.ADD
+        m.pose.position.x    = float(wx)
+        m.pose.position.y    = float(wy)
+        m.pose.position.z    = 0.25
+        m.pose.orientation.w = 1.0
+        m.scale.z            = 0.25
+        m.color.r            = 1.0
+        m.color.g            = 1.0
+        m.color.b            = 1.0
+        m.color.a            = 1.0
+        m.text               = str(digit)
+        m.lifetime           = Duration(sec=0, nanosec=0)  # forever
+        self.digit_markers.append(m)
+
+    def _publish_digit_markers(self):
+        arr = MarkerArray()
+        arr.markers = self.digit_markers
+        self.digit_marker_pub.publish(arr)
 
     # ══════════════════════════════════════════════════════════════════════════
     # Visualisation / publishing
