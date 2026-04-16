@@ -55,7 +55,7 @@ declare -A PER_DRONE_LAUNCH_REAL=(
     ["square"]="square_real.launch.py"
     ["map-user"]="map_user_real.launch.py"
     ["manual"]="none"
-    ["object-detection"]="ai_real.launch.py"
+    ["object-detection"]="object_detection_scanner_real.launch.py"
 )
 
 declare -A PER_DRONE_LAUNCH_SIM=(
@@ -65,7 +65,7 @@ declare -A PER_DRONE_LAUNCH_SIM=(
     ["square"]="square_sim.launch.py"
     ["map-user"]="map_user_sim.launch.py"
     ["manual"]="none"
-    ["object-detection"]="ai_sim.launch.py"
+    ["object-detection"]="object_detection_scanner_sim.launch.py"
 )
 
 # -----------------------------------------------------------------------------
@@ -86,6 +86,9 @@ display_help() {
     echo "    frontier-exploration       Single-drone autonomous exploration"
     echo "    frontier-exploration-swarm Multi-drone coordinated exploration"
     echo "                               (uses centralised goal assigner)"
+    echo "    object-detection           Scanner drone that visits hover points"
+    echo "                               whose scan discs cover free space"
+    echo "                               (uses centralised object-detection planner)"
     echo "    map-user                   Navigate using a pre-built or blank map"
     echo ""
     echo "  Third field (optional):"
@@ -130,7 +133,8 @@ declare -a TYPES
 declare -a MAPS
 WORLD=""
 MAP_FILE=""
-SWARM_ACTIVE="false"   # set true if any drone uses frontier-exploration-swarm
+SWARM_ACTIVE="false"     # set true if any drone uses frontier-exploration-swarm
+SCANNER_ACTIVE="false"   # set true if any drone uses object-detection
 
 for spec in "$@"; do
     IFS=':' read -r -a parts <<< "$spec"
@@ -164,6 +168,11 @@ for spec in "$@"; do
         SWARM_ACTIVE="true"
     fi
 
+    # Check if this drone uses the object-detection scanner
+    if [[ "$type" == "object-detection" ]]; then
+        SCANNER_ACTIVE="true"
+    fi
+
     # Extract Gazebo world name from third field when applicable
     if [[ -n "$extra" && "$extra" != /* && "$type" != "map-user" && -z "$WORLD" ]]; then
         WORLD="$extra"
@@ -190,6 +199,16 @@ for i in "${!TYPES[@]}"; do
 done
 SWARM_PREFIXES_LIST=$(IFS=','; echo "[${SWARM_PREFIXES[*]}]")
 
+# Build the scanner-only prefixes list for the object-detection planner: [/cf3,/cf4]
+# Only includes drones using object-detection.
+SCANNER_PREFIXES=()
+for i in "${!TYPES[@]}"; do
+    if [[ "${TYPES[$i]}" == "object-detection" ]]; then
+        SCANNER_PREFIXES+=("${PREFIXES[$i]}")
+    fi
+done
+SCANNER_PREFIXES_LIST=$(IFS=','; echo "[${SCANNER_PREFIXES[*]}]")
+
 # -----------------------------------------------------------------------------
 # Step 3: Source ROS 2 workspace
 # -----------------------------------------------------------------------------
@@ -210,12 +229,15 @@ for i in "${!PREFIXES[@]}"; do
 done
 [[ -n "$WORLD" ]] && echo "  Gazebo world: $WORLD"
 [[ "$SWARM_ACTIVE" == "true" ]] && echo "  Swarm goal assigner: ENABLED (drones: $SWARM_PREFIXES_LIST)"
+[[ "$SCANNER_ACTIVE" == "true" ]] && echo "  Object-detection planner: ENABLED (drones: $SCANNER_PREFIXES_LIST)"
 echo ""
 
 # -----------------------------------------------------------------------------
 # Step 5: Launch the shared file
-# Passes launch_goal_assigner=true when any swarm drone is present so the
-# shared launch file knows to start the goal_assigner node.
+# Passes launch_goal_assigner=true when any swarm drone is present, and
+# launch_object_detection_planner=true when any object-detection drone is
+# present. The shared launch file uses these flags to conditionally start
+# the matching centralised planner nodes.
 # -----------------------------------------------------------------------------
 
 if [[ "$MODE" == "real" ]]; then
@@ -224,6 +246,8 @@ if [[ "$MODE" == "real" ]]; then
         "robot_prefixes:=$PREFIXES_LIST"
         "launch_goal_assigner:=$SWARM_ACTIVE"
         "swarm_prefixes:=$SWARM_PREFIXES_LIST"
+        "launch_object_detection_planner:=$SCANNER_ACTIVE"
+        "scanner_prefixes:=$SCANNER_PREFIXES_LIST"
     )
     [[ -n "$MAP_FILE" ]] && SHARED_ARGS+=("map_file:=$MAP_FILE")
 else
@@ -232,6 +256,8 @@ else
         "robot_prefixes:=$PREFIXES_LIST"
         "launch_goal_assigner:=$SWARM_ACTIVE"
         "swarm_prefixes:=$SWARM_PREFIXES_LIST"
+        "launch_object_detection_planner:=$SCANNER_ACTIVE"
+        "scanner_prefixes:=$SCANNER_PREFIXES_LIST"
     )
     [[ -n "$MAP_FILE" ]] && SHARED_ARGS+=("map_file:=$MAP_FILE")
     [[ -n "$WORLD" ]] && SHARED_ARGS+=("world:=$WORLD")

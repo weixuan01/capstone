@@ -8,22 +8,26 @@ from launch_ros.actions import Node
 
 
 # =============================================================================
-# frontier_exploration_real.launch.py
+# ai_real.launch.py
 #
-# Per-drone launch file for frontier exploration in real mode.
+# Per-drone launch file for the object-detection scanner in real mode.
 # Called once per drone by launch-universal.sh.
 #
 # Launches:
-#   - vel_mux               Translates cmd_vel into drone-safe velocity commands
-#   - frontier_exploration  Autonomously explores unknown space
+#   - vel_mux                    Translates cmd_vel into drone-safe velocity commands
+#   - object_detection_scanner   Navigates to scan points assigned by the
+#                                centralised object_detection_planner and
+#                                performs a 360-degree spin at each one
+#   - collision_avoidance        Peer-repulsion layer between navigator and vel_mux
 #
 # NOT launched here (handled by shared_real.launch.py):
 #   - crazyflie_server
 #   - shared_mapper
+#   - object_detection_planner
 #   - rviz
 #
 # Launch arguments:
-#   robot_prefix   ROS 2 namespace for this drone, e.g. /cf1
+#   robot_prefix   ROS 2 namespace for this drone, e.g. /cf3
 # =============================================================================
 
 
@@ -32,7 +36,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'robot_prefix',
             default_value='/crazyflie',
-            description='ROS 2 namespace for this drone, e.g. /cf1'
+            description='ROS 2 namespace for this drone, e.g. /cf3'
         ),
         OpaqueFunction(function=_launch_setup),
     ])
@@ -55,42 +59,24 @@ def _launch_setup(context, *args, **kwargs):
         ],
     )
 
-    # ── AI ──────────────────────────────────────────────────
-    # Autonomously scans the shared map.
-    ai = Node(
-        package='crazyflie_ros2_ai',
-        executable='ai',
-        name=f'ai_{robot_prefix.lstrip("/")}',
+    # ── Object-detection scanner ──────────────────────────────────────────────
+    # Receives scan-point assignments from the centralised
+    # object_detection_planner and navigates to them via A*.  On arrival,
+    # performs a full 360-degree spin for object detection, then reports
+    # REACHED so the planner marks the disc as scanned.
+    object_detection_scanner = Node(
+        package='crazyflie_ros2_object_detection_scanner',
+        executable='object_detection_scanner',
+        name=f'{robot_prefix.lstrip("/")}_object_detection_scanner',
         output='screen',
         parameters=[
-            {'robot_prefix':         robot_prefix},
-            {'use_sim_time':         False},
-            {'delay':                5.0},
-            {'max_turn_rate':        0.7},
-            {'max_forward_speed':    0.5},
-            {'target_altitude':      0.5},
-            {'alt_kp':               1.2},
-            {'max_vz':               0.4},
-            {'max_obstacle_distance':0.3},
-        ],
-    )
-    
-    aideck_udp_streamer = Node(
-        package='crazyflie',
-        executable='aideck_udp_streamer.py',
-        name='aideck_udp_streamer',
-        output='screen',
-        parameters=[
-            {'deck_ip': '192.168.4.1'},
-            {'deck_port': 5000},
-            {'listen_ip': '0.0.0.0'},
-            {'listen_port': 5001},
-            {'image_topic': '/aideck/image_raw'},
+            {'robot_prefix': robot_prefix},
+            {'use_sim_time': False},
         ],
     )
 
     # ── Collision avoidance ───────────────────────────────────────────────────
-    # Sits between the exploration node and vel_mux. Passes cmd_vel_raw through
+    # Sits between the navigator and vel_mux.  Passes cmd_vel_raw through
     # unchanged during normal flight. Overrides with a resolution manoeuvre
     # when a peer drone enters the safety radius, then hands back control.
     collision_avoidance = Node(
@@ -100,8 +86,7 @@ def _launch_setup(context, *args, **kwargs):
         output='screen',
         parameters=[
             {'robot_prefix': robot_prefix},
-            {'incoming_twist_topic': '/cmd_vel_raw'},
         ],
     )
 
-    return [vel_mux, ai, aideck_udp_streamer, collision_avoidance]
+    return [vel_mux, object_detection_scanner, collision_avoidance]

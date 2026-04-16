@@ -13,20 +13,24 @@ from launch_ros.actions import Node
 #
 # Launched once per session by launch-universal.sh (real mode).
 # Starts the nodes that are shared across all drones:
-#   - crazyflie_server  (Crazyswarm2 — connects to all physical drones)
-#   - shared_mapper     (one unified occupancy map for all drones)
-#   - drone_manager     (battery monitoring + land command handling)
-#   - goal_assigner     (only when launch_goal_assigner:=true)
-#   - rviz              (visualiser, using the real-mode config)
+#   - crazyflie_server           (Crazyswarm2 — connects to all physical drones)
+#   - shared_mapper              (one unified occupancy map for all drones)
+#   - drone_manager              (battery monitoring + land command handling)
+#   - goal_assigner              (only when launch_goal_assigner:=true)
+#   - object_detection_planner   (only when launch_object_detection_planner:=true)
+#   - rviz                       (visualiser, using the real-mode config)
 #
 # This file is NOT responsible for any per-drone behaviour nodes.
 # Those are launched separately by the per-drone launch files.
 #
 # Launch arguments:
-#   robot_prefixes        Comma-separated list of all drone namespaces, e.g. [/cf1,/cf2]
-#   launch_goal_assigner  true | false — start the centralised goal assigner
-#   swarm_prefixes        Comma-separated list of swarm drone namespaces only, e.g. [/cf1,/cf2]
-#                         Only used when launch_goal_assigner is true.
+#   robot_prefixes                   Comma-separated list of all drone namespaces, e.g. [/cf1,/cf2]
+#   launch_goal_assigner             true | false — start the centralised goal assigner
+#   swarm_prefixes                   Comma-separated list of swarm drone namespaces only, e.g. [/cf1,/cf2]
+#                                    Only used when launch_goal_assigner is true.
+#   launch_object_detection_planner  true | false — start the centralised object-detection planner
+#   scanner_prefixes                 Comma-separated list of scanner drone namespaces only, e.g. [/cf3,/cf4]
+#                                    Only used when launch_object_detection_planner is true.
 # =============================================================================
 
 
@@ -48,6 +52,16 @@ def generate_launch_description():
             description='Namespaces of drones using frontier-exploration-swarm, e.g. [/cf1,/cf2]'
         ),
         DeclareLaunchArgument(
+            'launch_object_detection_planner',
+            default_value='false',
+            description='Set true to launch the centralised object-detection planner for scanner drones'
+        ),
+        DeclareLaunchArgument(
+            'scanner_prefixes',
+            default_value='[]',
+            description='Namespaces of drones using object-detection, e.g. [/cf3,/cf4]'
+        ),
+        DeclareLaunchArgument(
             'map_file',
             default_value='',
             description='Optional path to a previously saved map.yaml to pre-load into the shared mapper'
@@ -60,10 +74,13 @@ def _launch_setup(context, *args, **kwargs):
     prefixes_str          = context.launch_configurations['robot_prefixes']
     launch_goal_assigner  = context.launch_configurations['launch_goal_assigner'].lower() == 'true'
     swarm_prefixes_str    = context.launch_configurations['swarm_prefixes']
+    launch_od_planner     = context.launch_configurations['launch_object_detection_planner'].lower() == 'true'
+    scanner_prefixes_str  = context.launch_configurations['scanner_prefixes']
     map_file              = context.launch_configurations['map_file']
 
     prefixes_list = [p.strip() for p in prefixes_str.strip('[]').split(',') if p.strip()]
     swarm_list    = [p.strip() for p in swarm_prefixes_str.strip('[]').split(',') if p.strip()]
+    scanner_list  = [p.strip() for p in scanner_prefixes_str.strip('[]').split(',') if p.strip()]
 
     drone_names = [p.lstrip('/') for p in prefixes_list]
 
@@ -140,5 +157,23 @@ def _launch_setup(context, *args, **kwargs):
             ],
         )
         nodes.append(goal_assigner)
+
+    # ── Object-detection planner (scanner mode only) ──────────────────────────
+    # Only launched when launch-universal.sh passes
+    # launch_object_detection_planner:=true, which happens when at least one
+    # drone uses object-detection.  Runs greedy set cover + Hungarian
+    # assignment over the shared map and publishes per-drone scan points.
+    if launch_od_planner:
+        object_detection_planner = Node(
+            package='crazyflie_ros2_object_detection_planner',
+            executable='object_detection_planner',
+            name='object_detection_planner',
+            output='screen',
+            parameters=[
+                {'robot_prefixes': scanner_list},
+                {'use_sim_time':   False},
+            ],
+        )
+        nodes.append(object_detection_planner)
 
     return nodes

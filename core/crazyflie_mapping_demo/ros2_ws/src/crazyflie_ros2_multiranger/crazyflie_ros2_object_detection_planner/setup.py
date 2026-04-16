@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'crazyflie_ros2_ai'
+package_name = 'crazyflie_ros2_object_detection_planner'
 
 setup(
     name=package_name,
@@ -13,13 +13,13 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='weixuan',
-    maintainer_email='poonweixuan@gmail.com',
+    maintainer='RyanKwek',
+    maintainer_email='ryankwek1@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     entry_points={
         'console_scripts': [
-            'ai = crazyflie_ros2_ai.ai:main',
+            'object_detection_planner = crazyflie_ros2_object_detection_planner.object_detection_planner:main',
         ],
     },
 )

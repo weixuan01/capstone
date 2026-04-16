@@ -44,8 +44,8 @@ TAKEOFF_HEIGHT         = 0.3
 TAKEOFF_DELAY          = 3.0
 CRUISE_SPEED           = 0.3 #0.3
 MAX_TURN_RATE          = 0.5 #0.2
-OBSTACLE_DIST          = 0.25 #0.4   # outer detection radius: trigger replan when front wall within this distance
-GOAL_REACHED_DIST      = 0.15   # shared threshold for waypoints, final goal, and home arrival
+OBSTACLE_DIST          = 0.15 #0.4   # outer detection radius: trigger replan when front wall within this distance
+GOAL_REACHED_DIST      = 0.10   # shared threshold for waypoints, final goal, and home arrival
 MIN_FRONTIER_DIST      = 0.5
 FRONTIER_STEP          = 1
 REPLAN_COOLDOWN        = 3.5
@@ -71,8 +71,8 @@ MIN_VALID_CLUSTER_SIZE = 3    # absolute floor
 # Push the drone away from any wall closer than WALL_PUSH_DIST on all four
 # axes.  WALL_SAFE_DIST is kept as the threshold below which speed is reduced
 # when only one side wall is visible.
-WALL_PUSH_DIST          = 0.2  #0.3 # inner hard-push radius: must be < OBSTACLE_DIST
-WALL_SAFE_DIST          = 0.2  #0.3
+WALL_PUSH_DIST          = 0.10  # inner hard-push radius: must be < OBSTACLE_DIST
+WALL_SAFE_DIST          = 0.3  #0.3
 WALL_FILTER_ALPHA       = 0.3
 WALL_KP_SAFETY          = 0.3
 MAX_LATERAL_SPEED       = 0.24

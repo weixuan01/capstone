@@ -1,24 +1,63 @@
 #!/usr/bin/env python3
 
 """
-Drone Navigator — works with GoalAssigner
-==========================================
+Object-Detection Scanner Drone — works with ObjectDetectionPlanner
+===================================================================
 State machine:
   TAKEOFF      — take off and hover
-  SPINNING     — initial 100° scan to seed the map
-  WAIT_GOAL    — hover and wait for /cfX/assigned_goal from GoalAssigner
-  NAVIGATE     — follow A* waypoints to the assigned goal
-  DONE         — return to start via A* and land
+  WAIT_GOAL    — hover and wait for /{prefix}/assigned_scan_point
+  NAVIGATE     — follow A* waypoints to the assigned scan position
+  SPINNING     — 360-degree spin at scan position (object detection)
+  DONE         — return to start via A* and land (triggered by recall)
   LANDING      — descend
 
-Key changes from the monolithic version:
-  - No frontier detection, scoring, or peer gradient logic.
-  - No FIND_FRONTIER state.
-  - Goals come exclusively from GoalAssigner via /cfX/assigned_goal.
-  - On arrival or failure the node publishes to /cfX/goal_status
-    ("REACHED" or "FAILED") and returns to WAIT_GOAL.
-  - The stuck detector and replan logic are retained but with conservative
-    thresholds so a single narrow-corridor replan does not abandon the goal.
+Relationship to explorer_drone.py
+---------------------------------
+This node is structurally identical to the frontier-exploration navigator:
+same recall/land protocol, same goal_status reporting, same A* planner,
+same wall guidance.  The differences are:
+
+  - Listens on /{prefix}/assigned_scan_point (from ObjectDetectionPlanner)
+    instead of /{prefix}/assigned_goal.
+  - No initial seed-spin after takeoff — scanner drones assume the map
+    already exists (built by frontier-exploration drones).  They go
+    straight to WAIT_GOAL.
+  - On arrival at a goal, performs a full 360-degree spin, not a short
+    scanning spin.  "REACHED" is only reported after the spin completes.
+
+Recall / Land protocol (requirement 3)
+--------------------------------------
+Exactly matches explorer_drone.py:
+  x=NaN, z=0.0  — RECALL: return home via DONE state, then land
+  x=NaN, z=1.0  — LAND:   immediate descent
+On receipt of either, the drone publishes "RECALLED" on goal_status
+so the planner removes it from the assignment pool permanently.
+
+The mission-control dashboard publishes these NaN messages via the
+shared mission_control node, which sends them on the frontier goal
+topic /{prefix}/assigned_goal — not /{prefix}/assigned_scan_point.
+To keep the Recall/Land buttons working for scanner drones without
+touching mission_control, this node additionally subscribes to
+/{prefix}/assigned_goal and routes any NaN Point it sees there into
+the same _goal_cb handler.  Real-valued goals on /assigned_goal are
+ignored, since those are for the frontier explorer.
+
+Shared map contribution (requirement 5)
+---------------------------------------
+This drone runs the multiranger sensor if its deck is fitted and
+contributes to the shared map continuously, same as frontier-exploration
+drones.  Mapping is always on — no gating flag.  The shared_mapper node
+subscribes to /{prefix}/scan separately and processes those scans the
+whole time the drone is in the air.
+
+Battery voltage (requirement 4)
+-------------------------------
+Battery is handled exactly like frontier-exploration drones — the
+cflib backend publishes /{prefix}/status (crazyflie_interfaces/Status,
+configured in crazyflies.yaml with firmware_logging.default_topics.status).
+The standalone battery_monitor node subscribes to /{prefix}/status for
+every drone in the fleet and displays voltage on the mission-control
+dashboard.  No per-drone code is needed here.
 """
 
 import rclpy
@@ -51,7 +90,6 @@ OBSTACLE_DIST      = 0.15
 GOAL_REACHED_DIST  = 0.10
 REPLAN_COOLDOWN    = 3.5
 WALL_INFLATION_CELLS  = 2
-STANDOFF_WAYPOINTS    = 2
 PROXIMITY_COST_WEIGHT = 2
 PROXIMITY_COST_RADIUS = 5
 WAYPOINT_SPACING      = 2
@@ -64,9 +102,10 @@ WALL_KP_SAFETY      = 0.3
 MAX_LATERAL_SPEED   = 0.24
 
 # ── Spin ──────────────────────────────────────────────────────────────────────
-SPIN_RATE = 0.5
+SPIN_RATE   = 0.5
+SPIN_TARGET = 2.0 * math.pi   # full 360 for object detection coverage
 
-# ── Stuck detector — conservative so single replans don't lose the goal ───────
+# ── Stuck detector ────────────────────────────────────────────────────────────
 STUCK_PROGRESS_DIST       = 0.10
 STUCK_TIMEOUT             = 5.0
 MAX_STUCK_EVENTS_PER_GOAL = 3
@@ -75,20 +114,21 @@ MAX_REPLANS_PER_GOAL      = 3
 
 class State(Enum):
     TAKEOFF   = auto()
-    SPINNING  = auto()
-    WAIT_GOAL = auto()   # replaces FIND_FRONTIER
+    WAIT_GOAL = auto()
     NAVIGATE  = auto()
+    SPINNING  = auto()
     DONE      = auto()
     LANDING   = auto()
 
 
-class DroneNavigator(Node):
+class ObjectDetectionScanner(Node):
 
     def __init__(self):
-        super().__init__('drone_navigator')
+        super().__init__('object_detection_scanner')
 
         self.declare_parameter('robot_prefix', '/cf1')
         robot_prefix = self.get_parameter('robot_prefix').value
+        self.robot_prefix = robot_prefix
 
         # ── Internal state ────────────────────────────────────────────────────
         self.state    = State.TAKEOFF
@@ -101,25 +141,28 @@ class DroneNavigator(Node):
         self.map_height = 0
         self.map_origin = [0.0, 0.0]
 
-        self.goal             = None   # (x, y) from assigner
+        self.goal             = None   # (x, y) from planner
         self.waypoints        = []
         self.current_wp       = None
         self.needs_replan     = False
         self.last_replan_time = 0.0
         self.last_replan_pos  = None
-        self.last_path_cost   = None
         self.navigating_home  = False
 
-        self.start_pos           = None
-        self.start_time          = None
-        self.spin_start_time     = None
+        # Home location (requirement 3) — captured at end of TAKEOFF
+        self.start_pos  = None
+        self.start_time = None
+
+        # Spin state (full 360)
         self.spin_start_yaw      = None
         self.spin_total_rotation = 0.0
         self._last_spin_yaw      = 0.0
 
+        # Wall-filter state
         self.filtered_right = None
         self.filtered_left  = None
 
+        # Stuck / replan bookkeeping
         self.goal_start_time       = 0.0
         self.last_progress_pos     = None
         self.last_progress_time    = 0.0
@@ -128,9 +171,10 @@ class DroneNavigator(Node):
 
         self.position_received = False
         self.map_received      = False
-        self._going_home       = False  # set True when RECALL or LAND command received
-        self.exploration_start_time = None
-        self.last_status_log_time   = 0.0
+        self._going_home       = False  # set True on RECALL or LAND
+
+        self.scanning_start_time  = None
+        self.last_status_log_time = 0.0
 
         # ── ROS interface ─────────────────────────────────────────────────────
         self.create_subscription(
@@ -145,15 +189,32 @@ class DroneNavigator(Node):
         self.create_subscription(
             OccupancyGrid, '/map', self._map_cb, map_qos)
 
-        # Goal from assigner
+        # Goal from planner — NOTE different topic name from explorer_drone
         self.create_subscription(
-            Point, robot_prefix + '/assigned_goal', self._goal_cb, 10)
+            Point, robot_prefix + '/assigned_scan_point', self._goal_cb, 10)
 
-        self.cmd_pub        = self.create_publisher(Twist,      robot_prefix + '/cmd_vel_raw', 10)
-        self.status_pub     = self.create_publisher(String,     robot_prefix + '/goal_status',  10)
-        self.marker_pub     = self.create_publisher(Marker,     robot_prefix + '/exploration_goal', 10)
-        self.wp_marker_pub  = self.create_publisher(MarkerArray,robot_prefix + '/waypoints', 10)
-        self.drone_marker_pub = self.create_publisher(Marker,   robot_prefix + '/drone_pose', 10)
+        # Recall / land compatibility subscription.
+        # The mission_control node publishes NaN Point messages to
+        # /{prefix}/assigned_goal (the frontier-exploration topic) for both
+        # the Recall and Land buttons on the mission-control dashboard.
+        # Scanner drones subscribe here too so those same buttons work for
+        # them.  Only NaN messages are forwarded — real-valued goals on this
+        # topic are silently ignored, since those are meant for a frontier
+        # explorer, not a scanner.
+        self.create_subscription(
+            Point, robot_prefix + '/assigned_goal',
+            self._recall_compat_cb, 10)
+
+        self.cmd_pub          = self.create_publisher(
+            Twist, robot_prefix + '/cmd_vel_raw', 10)
+        self.status_pub       = self.create_publisher(
+            String, robot_prefix + '/goal_status', 10)
+        self.marker_pub       = self.create_publisher(
+            Marker, robot_prefix + '/scan_goal', 10)
+        self.wp_marker_pub    = self.create_publisher(
+            MarkerArray, robot_prefix + '/waypoints', 10)
+        self.drone_marker_pub = self.create_publisher(
+            Marker, robot_prefix + '/drone_pose', 10)
 
         self.create_service(
             Trigger, robot_prefix + '/stop_exploration', self._stop_cb)
@@ -161,7 +222,8 @@ class DroneNavigator(Node):
 
         self._publish_vel(z=TAKEOFF_HEIGHT)
         self.start_time = self.get_clock().now().nanoseconds * 1e-9
-        self.get_logger().info(f'DroneNavigator started. prefix={robot_prefix}')
+        self.get_logger().info(
+            f'ObjectDetectionScanner started. prefix={robot_prefix}')
 
     # ══════════════════════════════════════════════════════════════════════════
     # Callbacks
@@ -186,10 +248,12 @@ class DroneNavigator(Node):
         left  = self.ranges[3] if len(self.ranges) > 3 else 0.0
         if right > 0.0:
             self.filtered_right = (right if self.filtered_right is None else
-                WALL_FILTER_ALPHA * right + (1 - WALL_FILTER_ALPHA) * self.filtered_right)
+                WALL_FILTER_ALPHA * right +
+                (1 - WALL_FILTER_ALPHA) * self.filtered_right)
         if left > 0.0:
             self.filtered_left = (left if self.filtered_left is None else
-                WALL_FILTER_ALPHA * left + (1 - WALL_FILTER_ALPHA) * self.filtered_left)
+                WALL_FILTER_ALPHA * left +
+                (1 - WALL_FILTER_ALPHA) * self.filtered_left)
 
     def _map_cb(self, msg):
         self.map_data   = np.array(msg.data, dtype=np.int8)
@@ -200,60 +264,57 @@ class DroneNavigator(Node):
         self.map_received = True
 
     def _goal_cb(self, msg: Point):
-        """Receive a message on /cfX/assigned_goal.
-
-        Three cases distinguished by x and z values:
-          x=NaN, z=0.0  — RECALL: return home then land (from assigner or mission control)
-          x=NaN, z=1.0  — LAND:   land in place immediately (from mission control)
-          x=real number — normal frontier goal from assigner
         """
-        # ── Recall or land-in-place command ───────────────────────────────────
+        Three cases (identical protocol to explorer_drone):
+          x=NaN, z=0.0 — RECALL: return home then land
+          x=NaN, z=1.0 — LAND:   immediate descent
+          x=real       — normal scan-point assignment
+        """
+        # ── Recall or land-in-place ───────────────────────────────────────────
         if math.isnan(msg.x):
             self._going_home = True
             self._report_status('RECALLED')
+
             self.goal         = None
             self.waypoints    = []
             self.current_wp   = None
             self.needs_replan = False
 
             if msg.z == 1.0:
-                # Land in place — jump straight to LANDING
                 self.get_logger().info(
                     'Land-in-place command received. Descending now.')
                 self.state = State.LANDING
             else:
-                # Recall — navigate home first via DONE state
                 self.get_logger().info(
                     'Recall command received. Returning home.')
                 self.state = State.DONE
             return
 
-        # ── Ignore new frontier goals if already recalled ─────────────────────
+        # ── Ignore further goals if already going home ────────────────────────
         if self._going_home:
             return
 
-        # ── Normal frontier goal ──────────────────────────────────────────────
+        # ── Normal scan-point assignment ──────────────────────────────────────
         new_goal = (msg.x, msg.y)
         if self.goal == new_goal:
-            return  # same goal echoed back — ignore
+            return  # echoed back — ignore
         now = self.get_clock().now().nanoseconds * 1e-9
         self.get_logger().info(
-            f'New goal assigned: ({new_goal[0]:.2f},{new_goal[1]:.2f})')
+            f'New scan point assigned: ({new_goal[0]:.2f},{new_goal[1]:.2f})')
         self.goal                  = new_goal
         self.waypoints             = []
         self.current_wp            = None
         self.needs_replan          = False
         self.last_replan_time      = 0.0
         self.last_replan_pos       = None
-        self.last_path_cost        = None
         self.goal_start_time       = now
         self.last_progress_pos     = (self.position[0], self.position[1])
         self.last_progress_time    = now
         self.stuck_events_for_goal = 0
         self.replan_count_for_goal = 0
-        # Only switch to NAVIGATE if already in WAIT_GOAL or NAVIGATE.
-        # If still taking off or spinning the state machine picks up the
-        # goal naturally once it enters WAIT_GOAL.
+
+        # Only trigger A* immediately if we're airborne and idle or moving.
+        # During TAKEOFF the state machine picks it up on entering WAIT_GOAL.
         if self.state in (State.WAIT_GOAL, State.NAVIGATE):
             self._plan_path_to_goal()
             if self.waypoints:
@@ -262,10 +323,28 @@ class DroneNavigator(Node):
                     f'Path planned: {len(self.waypoints)} waypoints.')
             else:
                 self.get_logger().warn(
-                    'A* failed for assigned goal — reporting FAILED.')
+                    'A* failed for assigned scan point — reporting FAILED.')
                 self._report_status('FAILED')
                 self.goal  = None
                 self.state = State.WAIT_GOAL
+
+    def _recall_compat_cb(self, msg: Point):
+        """
+        Handles NaN Point messages arriving on /{prefix}/assigned_goal.
+
+        The mission-control dashboard's Recall and Land buttons flow
+        through mission_control, which publishes NaN Points to the
+        frontier-exploration goal topic.  Scanner drones don't otherwise
+        listen on that topic, so this small compatibility subscription
+        catches the recall/land command and delegates to the normal
+        _goal_cb handler, which already knows how to process NaN
+        messages (x=NaN, z=0.0 = recall; x=NaN, z=1.0 = land in place).
+
+        Real-valued goals on this topic are silently ignored — those are
+        intended for frontier explorers, not scanner drones.
+        """
+        if math.isnan(msg.x):
+            self._goal_cb(msg)
 
     def _stop_cb(self, request, response):
         self.get_logger().info('Stop requested — landing.')
@@ -298,38 +377,21 @@ class DroneNavigator(Node):
             if airborne and now - self.start_time > TAKEOFF_DELAY:
                 self.start_pos = [self.position[0], self.position[1]]
                 self.get_logger().info(
-                    f'Takeoff complete. Home: ({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
-                self.spin_start_yaw      = self.angles[2]
-                self.spin_total_rotation = 0.0
-                self._last_spin_yaw      = self.angles[2]
-                self.state = State.SPINNING
-
-        # ── SPINNING ──────────────────────────────────────────────────────────
-        elif self.state == State.SPINNING:
-            self._publish_vel(y=self._wall_correction(), wz=SPIN_RATE)
-            yaw_delta = self._wrap_angle(
-                self.angles[2] - (self.spin_start_yaw
-                                  if self.spin_total_rotation == 0.0
-                                  else self._last_spin_yaw))
-            self._last_spin_yaw       = self.angles[2]
-            self.spin_total_rotation += abs(yaw_delta)
-            if self.spin_total_rotation >= (10/36) * 2 * math.pi:
-                self._publish_vel()
-                self.exploration_start_time = now
-                self.get_logger().info('Initial scan done. Waiting for goal.')
+                    f'Takeoff complete. '
+                    f'Home: ({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
+                self.scanning_start_time = now
+                # No seed spin — scanner drones assume a pre-built map.
                 self.state = State.WAIT_GOAL
 
         # ── WAIT_GOAL ─────────────────────────────────────────────────────────
         elif self.state == State.WAIT_GOAL:
-            # Just hover. The assigner will call _goal_cb when ready.
             self._publish_vel(y=self._wall_correction())
             if self.goal is not None:
-                # Goal arrived while we were hovering
                 self._plan_path_to_goal()
                 if self.waypoints:
                     self.state = State.NAVIGATE
                 else:
-                    self.get_logger().warn('A* failed — reporting FAILED, waiting.')
+                    self.get_logger().warn('A* failed — reporting FAILED.')
                     self._report_status('FAILED')
                     self.goal = None
 
@@ -343,9 +405,9 @@ class DroneNavigator(Node):
             if self._is_stuck(now):
                 self.stuck_events_for_goal += 1
                 self.get_logger().warn(
-                    f'Stuck event {self.stuck_events_for_goal}/{MAX_STUCK_EVENTS_PER_GOAL}')
+                    f'Stuck {self.stuck_events_for_goal}/{MAX_STUCK_EVENTS_PER_GOAL}')
                 if self.stuck_events_for_goal >= MAX_STUCK_EVENTS_PER_GOAL:
-                    self.get_logger().warn('Too many stuck events — reporting FAILED.')
+                    self.get_logger().warn('Too many stuck events — FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -356,7 +418,7 @@ class DroneNavigator(Node):
             if self.needs_replan:
                 self.replan_count_for_goal += 1
                 if self.replan_count_for_goal > MAX_REPLANS_PER_GOAL:
-                    self.get_logger().warn('Too many replans — reporting FAILED.')
+                    self.get_logger().warn('Too many replans — FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -364,7 +426,7 @@ class DroneNavigator(Node):
                 if (self.last_replan_pos is not None and
                         abs(cg[0]-self.last_replan_pos[0]) <= 1 and
                         abs(cg[1]-self.last_replan_pos[1]) <= 1):
-                    self.get_logger().warn('Replanned but no movement — reporting FAILED.')
+                    self.get_logger().warn('Replanned but no movement — FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -382,42 +444,38 @@ class DroneNavigator(Node):
 
             # Layer 4 — waypoint following
             if not self.waypoints and self.current_wp is None:
-                if self.navigating_home:
-                    self.navigating_home = False
-                    self.state = State.LANDING
-                else:
-                    self.get_logger().info(
-                        f'Goal ({self.goal[0]:.2f},{self.goal[1]:.2f}) reached.')
-                    self._report_status('REACHED')
-                    self._clear_goal()
-                    # Brief scan spin before waiting for next goal
-                    self.spin_start_yaw      = self.angles[2]
-                    self.spin_total_rotation = 0.0
-                    self._last_spin_yaw      = self.angles[2]
-                    self.state = State.SPINNING
+                self._on_arrival()
                 return
 
             if self._follow_waypoints(now):
-                if self.navigating_home:
-                    self.navigating_home = False
-                    self.state = State.LANDING
-                else:
-                    self.get_logger().info(
-                        f'Goal ({self.goal[0]:.2f},{self.goal[1]:.2f}) reached.')
-                    self._report_status('REACHED')
-                    self._clear_goal()
-                    self.spin_start_yaw      = self.angles[2]
-                    self.spin_total_rotation = 0.0
-                    self._last_spin_yaw      = self.angles[2]
-                    self.state = State.SPINNING
+                self._on_arrival()
 
-        # ── DONE ──────────────────────────────────────────────────────────────
+        # ── SPINNING ──────────────────────────────────────────────────────────
+        elif self.state == State.SPINNING:
+            self._publish_vel(wz=SPIN_RATE)
+            yaw_delta = self._wrap_angle(
+                self.angles[2] - self._last_spin_yaw)
+            self._last_spin_yaw       = self.angles[2]
+            self.spin_total_rotation += abs(yaw_delta)
+
+            if self.spin_total_rotation >= SPIN_TARGET:
+                self._publish_vel()
+                self.get_logger().info(
+                    f'360 spin complete at '
+                    f'({self.position[0]:.2f},{self.position[1]:.2f}).')
+                # Now — and only now — report REACHED so the planner marks
+                # the disc as scanned.
+                self._report_status('REACHED')
+                self._clear_goal()
+
+        # ── DONE (return to start via A*) ─────────────────────────────────────
         elif self.state == State.DONE:
             if self.start_pos is None:
                 self.state = State.LANDING
                 return
             home = (self.start_pos[0], self.start_pos[1])
-            if math.hypot(self.position[0]-home[0], self.position[1]-home[1]) < GOAL_REACHED_DIST:
+            if math.hypot(self.position[0]-home[0],
+                          self.position[1]-home[1]) < GOAL_REACHED_DIST:
                 self.state = State.LANDING
                 return
             self.goal             = home
@@ -448,7 +506,28 @@ class DroneNavigator(Node):
                 self.get_logger().info('Landed.')
 
     # ══════════════════════════════════════════════════════════════════════════
-    # Navigation helpers
+    # Arrival handling
+    # ══════════════════════════════════════════════════════════════════════════
+
+    def _on_arrival(self):
+        """Called when waypoints are exhausted — drone has reached its goal."""
+        if self.navigating_home:
+            # Arrived home (recall flow); drop into LANDING from the state machine.
+            self.navigating_home = False
+            self.state = State.LANDING
+            return
+
+        # Arrived at a scan point — perform the full 360 spin.
+        self.get_logger().info(
+            f'Arrived at scan point '
+            f'({self.goal[0]:.2f},{self.goal[1]:.2f}). Starting 360 spin.')
+        self.spin_start_yaw      = self.angles[2]
+        self.spin_total_rotation = 0.0
+        self._last_spin_yaw      = self.angles[2]
+        self.state = State.SPINNING
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # Navigation helpers  (identical to explorer_drone.py)
     # ══════════════════════════════════════════════════════════════════════════
 
     def _execute_replan(self, now):
@@ -478,7 +557,6 @@ class DroneNavigator(Node):
             self.last_progress_pos  = (self.position[0], self.position[1])
             self.last_progress_time = now
             return False
-        # Do not fire within 6 seconds of a replan
         if (now - self.last_replan_time) < 6.0:
             self.last_progress_pos  = (self.position[0], self.position[1])
             self.last_progress_time = now
@@ -518,6 +596,8 @@ class DroneNavigator(Node):
             if self.waypoints:
                 speed = CRUISE_SPEED / max(dist, 1e-3)
             else:
+                # Ramp down into the scan point — no standoff trimming here,
+                # arrive exactly at the centre.
                 speed = min(CRUISE_SPEED, dist) / max(dist, 1e-3)
 
             wall_vx, wall_vy, _ = self._get_wall_guidance()
@@ -548,7 +628,7 @@ class DroneNavigator(Node):
             return 0.0, 0.0, 1.0
         r = self.filtered_right if self.filtered_right else self._right_range()
         l = self.filtered_left  if self.filtered_left  else self._left_range()
-        vy = speed_scale = 0.0
+        vy = 0.0
         speed_scale = 1.0
         if r < WALL_PUSH_DIST:
             vy += min(MAX_LATERAL_SPEED, WALL_KP_SAFETY * (WALL_PUSH_DIST - r))
@@ -557,7 +637,8 @@ class DroneNavigator(Node):
         if min(r, l) < WALL_SAFE_DIST:
             speed_scale = 0.75
         front = self._front_range()
-        back  = (self.ranges[0] if len(self.ranges) > 0 and self.ranges[0] > 0.0 else 999.0)
+        back  = (self.ranges[0] if len(self.ranges) > 0 and self.ranges[0] > 0.0
+                 else 999.0)
         vx = 0.0
         if front < WALL_PUSH_DIST:
             vx -= min(CRUISE_SPEED, WALL_KP_SAFETY * (WALL_PUSH_DIST - front))
@@ -572,7 +653,7 @@ class DroneNavigator(Node):
         return vy
 
     # ══════════════════════════════════════════════════════════════════════════
-    # A* path planning
+    # A* path planning — unknown=free since the map is pre-built
     # ══════════════════════════════════════════════════════════════════════════
 
     def _world_to_grid(self, wx, wy):
@@ -584,10 +665,16 @@ class DroneNavigator(Node):
                 self.map_origin[1] + (row + 0.5) * MAP_RES)
 
     def _build_inflated_map(self, inflation):
+        """
+        Unknown cells (-1) are treated as FREE here — scanner drones run
+        on a pre-built map where unknowns are navigable passageway, not
+        hidden walls.  Only cells explicitly marked 100 are blocked.
+        This mirrors the original coverage_scanner; it differs from the
+        explorer drone's A*, which treats unknown as blocked.
+        """
         W, H     = self.map_width, self.map_height
         passable = np.ones(W * H, dtype=bool)
         passable[self.map_data == 100] = False
-        passable[self.map_data == -1]  = False
         if inflation > 0:
             for idx in np.where(self.map_data == 100)[0]:
                 r, c = divmod(int(idx), W)
@@ -600,7 +687,7 @@ class DroneNavigator(Node):
     def _build_proximity_cost(self, radius):
         W, H     = self.map_width, self.map_height
         dist_arr = np.full(W * H, -1, dtype=np.int32)
-        mask     = (self.map_data == 100) | (self.map_data == -1)
+        mask     = (self.map_data == 100)
         dist_arr[mask] = 0
         queue = deque(zip(*np.where(mask.reshape(H, W))))
         dirs4 = [(-1,0),(1,0),(0,-1),(0,1)]
@@ -688,12 +775,11 @@ class DroneNavigator(Node):
         path.append((sr, sc))
         path.reverse()
 
+        # No STANDOFF trimming — scanner drones must arrive exactly at
+        # the centre of the scan disc.
         wps = [self._grid_to_world(r, c)
                for i, (r, c) in enumerate(path)
                if i % WAYPOINT_SPACING == 0 or i == len(path)-1]
-
-        if not self.navigating_home and len(wps) > STANDOFF_WAYPOINTS + 1:
-            wps = wps[:-STANDOFF_WAYPOINTS]
 
         self.waypoints = wps
         self.get_logger().info(
@@ -737,7 +823,7 @@ class DroneNavigator(Node):
         m = Marker()
         m.header.frame_id    = 'map'
         m.header.stamp       = self.get_clock().now().to_msg()
-        m.ns = 'goal'; m.id = 0
+        m.ns = 'scan_goal'; m.id = 0
         m.type   = Marker.SPHERE
         m.action = Marker.ADD
         m.pose.position.x = float(x)
@@ -787,7 +873,7 @@ class DroneNavigator(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = DroneNavigator()
+    node = ObjectDetectionScanner()
     rclpy.spin(node)
     rclpy.destroy_node()
     rclpy.shutdown()
