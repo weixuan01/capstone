@@ -91,6 +91,7 @@ Visualization Manager:
               {}
       Update Interval: 0
       Value: true
+      
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Marker
@@ -102,8 +103,28 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /exploration_goal
+        Value: cf1/exploration_goal
       Value: true
+      
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Marker
+      Namespaces:
+        exploration: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: cf2/exploration_goal
+      Value: true
+      
+      
+      
+      
+      
+      
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: MarkerArray

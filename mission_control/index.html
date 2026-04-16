@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mission Control</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"/>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/roslib@1.3.0/build/roslib.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0e0e0e;
+  --s1:#141414;
+  --s2:#1a1a1a;
+  --s3:#202020;
+  --border:#1e1e1e;
+  --border2:#2a2a2a;
+  --accent:#7eb8a0;
+  --accent2:#6aa48c;
+  --accent-glow:rgba(126,184,160,0.1);
+  --accent-dim:rgba(126,184,160,0.08);
+  --blue:#8888b0;
+  --blue-dim:rgba(136,136,176,0.1);
+  --warn:#a07840;
+  --danger:#b05a50;
+  --danger-dim:rgba(176,90,80,0.1);
+  --text:#d4d4d4;
+  --muted:#4a4a4a;
+  --muted2:#333333;
+  --bar:46px;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden}
+
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* ── topbar ── */
+#topbar{
+  height:var(--bar);background:var(--s1);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;
+}
+#wordmark{
+  font-family:'Inter',sans-serif;font-weight:500;font-size:14px;
+  letter-spacing:0.04em;color:var(--text);
+  position:absolute;left:50%;transform:translateX(-50%);
+}
+
+#conn-pill{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)}
+#conn-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);transition:all 0.4s}
+#conn-dot.on{background:var(--accent)}
+
+/* ── tabs ── */
+#tabbar{
+  height:38px;background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-end;padding:0 20px;gap:0;flex-shrink:0;
+}
+.tab{
+  height:32px;padding:0 20px;font-size:12px;
+  color:var(--muted);cursor:pointer;border:none;background:transparent;
+  border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Inter',sans-serif;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── panels ── */
+.panel{display:none;flex:1;overflow:hidden}
+.panel.active{display:flex;flex-direction:column}
+
+/* ═══════════════════════════════════════════
+   LAUNCH CONFIG PANEL
+═══════════════════════════════════════════ */
+#p-launch{overflow-y:auto;padding:28px 28px 40px;gap:0;flex-direction:column}
+
+/* mode toggle */
+.cfg-block{margin-bottom:28px}
+.cfg-heading{
+  font-size:13px;font-weight:500;
+  color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:10px;
+}
+.cfg-heading::after{content:'';flex:1;height:1px;background:var(--border)}
+
+#mode-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cfg-banner{
+  background:var(--s2);border:1px solid var(--border2);border-radius:8px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:10px;
+}
+.cfg-banner-label{font-size:13px;font-weight:500;color:var(--muted)}
+#mode-toggle{display:inline-flex;background:var(--s3);border:1px solid var(--border2);border-radius:6px;overflow:hidden;align-self:flex-start}
+.mode-btn{
+  padding:9px 30px;font-size:13px;
+  cursor:pointer;border:none;background:transparent;color:var(--muted);
+  font-family:'Inter',sans-serif;transition:all 0.2s;
+}
+.mode-btn.active{background:var(--accent-dim);color:var(--accent)}
+#world-input{
+  background:var(--s3);border:1px solid var(--border2);
+  color:var(--text);font-family:'Inter',sans-serif;font-size:12px;
+  padding:7px 11px;border-radius:6px;outline:none;transition:border-color 0.2s;width:100%;
+}
+#world-select,#world-input{
+  background:var(--s3);border:1px solid var(--border2);
+  color:var(--text);font-family:'Inter',sans-serif;font-size:12px;
+  padding:7px 11px;border-radius:6px;outline:none;transition:border-color 0.2s;width:100%;
+  -webkit-appearance:none;appearance:none;
+}
+#world-select:focus,#world-input:focus{border-color:var(--accent)}
+#world-input::placeholder{color:var(--muted2)}
+#world-select option{background:#1a1a1a}
+#world-label{font-size:11px;color:var(--muted)}
+
+/* drone cards */
+#drones-wrap{display:flex;flex-direction:column;gap:12px}
+
+.drone-card{
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:20px 22px;display:flex;flex-direction:column;gap:16px;
+  animation:fadeIn 0.2s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.card-header{display:flex;align-items:center;justify-content:space-between}
+.drone-badge{
+  font-size:11px;font-weight:500;
+  color:var(--accent);background:var(--accent-dim);
+  border:1px solid rgba(126,184,160,0.2);
+  padding:3px 10px;border-radius:4px;
+}
+.card-remove{
+  width:24px;height:24px;border-radius:5px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted2);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;line-height:1;
+}
+.card-remove:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+
+.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.span2{grid-column:1/-1}
+.field label{font-size:11px;color:var(--muted)}
+
+.field input,.field select{
+  background:var(--s3);border:1px solid var(--border2);
+  color:var(--text);font-family:'Inter',sans-serif;font-size:12px;
+  padding:8px 11px;border-radius:6px;outline:none;transition:border-color 0.2s;
+  -webkit-appearance:none;appearance:none;width:100%;
+}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input::placeholder{color:var(--muted2)}
+.field select option{background:#1a1a1a}
+
+/* add drone */
+#add-btn{
+  width:100%;padding:11px;background:transparent;
+  border:1px dashed var(--border2);border-radius:8px;
+  color:var(--muted);font-size:12px;
+  cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;
+  margin-top:4px;
+}
+#add-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* launch btn */
+#launch-btn{
+  width:100%;padding:13px;margin-top:24px;
+  background:var(--accent-dim);border:1px solid rgba(126,184,160,0.3);border-radius:8px;
+  color:var(--accent);font-size:13px;font-weight:500;
+  cursor:pointer;font-family:'Inter',sans-serif;
+  transition:all 0.2s;
+}
+#launch-btn:hover{background:rgba(126,184,160,0.14)}
+#launch-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* ═══════════════════════════════════════════
+   MONITOR PANEL
+═══════════════════════════════════════════ */
+#p-monitor{flex-direction:column;overflow:hidden}
+
+/* top third: drone status */
+#monitor-left{
+  height:33%;flex-shrink:0;display:flex;flex-direction:column;
+  border-bottom:1px solid var(--border);overflow:hidden;
+}
+
+/* status header bar */
+#status-header{
+  height:40px;background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;flex-shrink:0;
+}
+#status-header-label{font-size:11px;font-weight:500;color:var(--muted)}
+
+/* land all button */
+#land-all-btn{
+  padding:6px 18px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1px solid rgba(176,90,80,0.4);border-radius:6px;
+  background:var(--danger-dim);color:var(--danger);font-family:'Inter',sans-serif;
+  transition:all 0.2s;
+}
+#land-all-btn:hover{background:rgba(176,90,80,0.2);border-color:var(--danger)}
+
+/* drone grid */
+#drone-cards-area{
+  flex:1;overflow-y:auto;padding:20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:14px;
+  align-content:start;
+}
+
+.drone-status-card{
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:16px 18px;display:flex;flex-direction:column;gap:14px;
+}
+.dsc-row1{display:flex;align-items:center;justify-content:space-between}
+.dsc-name{font-size:13px;font-weight:500;color:var(--text)}
+.dsc-mission{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px}
+.dsc-state{font-size:10px;font-family:'IBM Plex Mono',monospace;padding:2px 8px;border-radius:3px}
+.state-active{background:var(--accent-dim);color:var(--accent)}
+.state-offline{background:var(--s3);color:var(--muted2)}
+.state-landing{background:var(--danger-dim);color:var(--danger)}
+.state-recalled{background:var(--blue-dim);color:var(--blue)}
+
+/* voltage + battery */
+.batt-block{display:flex;flex-direction:column;gap:8px}
+.voltage-row{display:flex;align-items:baseline;gap:6px}
+.voltage-val{font-size:22px;font-weight:500;font-family:'IBM Plex Mono',monospace;color:var(--text);line-height:1}
+.voltage-unit{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--muted)}
+.voltage-label{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted2);margin-left:auto}
+.batt-row{display:flex;align-items:center;gap:8px}
+.batt-track{flex:1;height:5px;background:var(--s3);border-radius:3px;overflow:hidden}
+.batt-fill{height:100%;border-radius:3px;transition:width 0.6s;background:var(--accent)}
+.batt-fill.warn{background:var(--warn)}
+.batt-fill.low{background:var(--danger)}
+.batt-pct{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted);min-width:32px;text-align:right}
+
+/* land button */
+.dsc-actions{display:flex;gap:6px}
+.recall-btn{
+  flex:1;padding:7px 0;font-size:11px;font-weight:500;
+  cursor:pointer;border:1px solid rgba(136,136,176,0.35);border-radius:5px;
+  background:var(--blue-dim);color:var(--blue);font-family:'Inter',sans-serif;
+  transition:all 0.2s;
+}
+.recall-btn:hover{background:rgba(136,136,176,0.2);border-color:var(--blue)}
+.land-btn{
+  flex:1;padding:7px 0;font-size:11px;font-weight:500;
+  cursor:pointer;border:1px solid rgba(176,90,80,0.35);border-radius:5px;
+  background:var(--danger-dim);color:var(--danger);font-family:'Inter',sans-serif;
+  transition:all 0.2s;
+}
+.land-btn:hover{background:rgba(176,90,80,0.2);border-color:var(--danger)}
+
+/* bottom two-thirds: log */
+#monitor-right{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+}
+
+/* launch log terminal */
+#log-section{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.log-header{
+  height:34px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.log-header-left{display:flex;align-items:center;gap:10px}
+.log-title{font-size:11px;font-weight:500;color:var(--muted)}
+#launch-status-pill{
+  font-size:10px;font-family:'IBM Plex Mono',monospace;
+  padding:2px 8px;border-radius:3px;
+}
+.pill-idle{background:var(--s3);color:var(--muted2)}
+.pill-running{background:var(--accent-dim);color:var(--accent)}
+.pill-stopped{background:var(--danger-dim);color:var(--danger)}
+
+#log-terminal{flex:1;padding:6px;overflow:hidden}
+
+/* stop btn */
+#stop-btn{
+  padding:5px 14px;
+  background:var(--danger-dim);border:1px solid rgba(176,90,80,0.3);border-radius:5px;
+  color:var(--danger);font-size:11px;font-weight:500;
+  cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;flex-shrink:0;
+}
+#stop-btn:hover{background:rgba(255,83,112,0.2)}
+
+/* ═══════════════════════════════════════════
+   DEV PANEL
+═══════════════════════════════════════════ */
+#p-dev{flex-direction:column;overflow:hidden}
+#dev-terminal{flex:1;padding:6px;overflow:hidden;min-height:0}
+
+/* build button — sits in tabbar pushed to the right */
+#build-btn{
+  margin-left:auto;margin-bottom:4px;
+  padding:5px 16px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1px solid rgba(126,184,160,0.3);border-radius:6px;
+  background:var(--accent-dim);color:var(--accent);font-family:'Inter',sans-serif;
+  transition:all 0.2s;flex-shrink:0;
+}
+#build-btn:hover{background:rgba(126,184,160,0.14)}
+#build-btn.building{opacity:0.5;cursor:not-allowed}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- topbar -->
+  <div id="topbar">
+    <span id="wordmark">Mission Control</span>
+    <div id="conn-pill">
+      <div id="conn-dot"></div>
+      <span id="conn-label">disconnected</span>
+    </div>
+  </div>
+
+  <!-- tabs -->
+  <div id="tabbar">
+    <button class="tab active" data-tab="launch">Launch Config</button>
+    <button class="tab" data-tab="monitor">Monitor</button>
+    <button class="tab" data-tab="dev">Dev</button>
+    <button id="build-btn">Build Project</button>
+  </div>
+
+  <!-- panels -->
+  <div id="panels" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+
+    <!-- ── LAUNCH CONFIG ── -->
+    <div id="p-launch" class="panel active">
+
+      <!-- mode + world/map -->
+      <div class="cfg-block">
+        <div id="mode-row">
+          <div class="cfg-banner">
+            <span class="cfg-banner-label">Mode</span>
+            <div id="mode-toggle">
+              <button class="mode-btn active" data-mode="sim">Sim</button>
+              <button class="mode-btn" data-mode="real">Real</button>
+            </div>
+          </div>
+          <div class="cfg-banner">
+            <label class="cfg-banner-label" id="world-label">World / map</label>
+            <select id="world-select">
+              <option value="">— none —</option>
+              <option value="maze">maze</option>
+              <option value="circle-maze">circle-maze</option>
+              <option value="__custom__">Custom path...</option>
+            </select>
+            <input type="text" id="world-input" placeholder="/home/ryan/maps/room.yaml" style="display:none" />
+          </div>
+        </div>
+      </div>
+
+      <!-- drones -->
+      <div class="cfg-block">
+        <div class="cfg-heading">Drones</div>
+        <div id="drones-wrap"></div>
+        <button id="add-btn">+ Add Drone</button>
+      </div>
+
+      <button id="launch-btn">Launch</button>
+
+    </div>
+
+    <!-- ── MONITOR ── -->
+    <div id="p-monitor" class="panel">
+
+      <!-- left: drone status grid -->
+      <div id="monitor-left">
+        <div id="status-header">
+          <span id="status-header-label">Drone Status</span>
+          <button id="land-all-btn">Land All</button>
+        </div>
+        <div id="drone-cards-area">
+          <div id="drone-cards" style="display:contents">
+            <div style="font-size:10px;color:var(--muted2);padding:8px 0;grid-column:1/-1">No drones launched yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- bottom: log -->
+      <div id="monitor-right">
+        <div id="log-section">
+          <div class="log-header">
+            <div class="log-header-left">
+              <span class="log-title">Launch Log</span>
+              <span id="launch-status-pill" class="pill-idle">idle</span>
+            </div>
+            <button id="stop-btn">Stop Launch</button>
+          </div>
+          <div id="log-terminal"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── DEV ── -->
+    <div id="p-dev" class="panel">
+      <div id="dev-terminal"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════
+let currentMode = 'sim'
+let droneCount = 0
+let droneData = {}   // prefix -> { battery, state, rosListeners }
+let launchWs = null
+let rosBridge = null
+let devTerm = null
+let devFit = null
+let devTermReady = false
+let shellWs = null
+
+const MISSIONS = [
+  'frontier-exploration-swarm',
+  'frontier-exploration',
+  'object-detection',
+  'wallfollowing',
+  'manual',
+  'square',
+  'map-user',
+]
+
+// ═══════════════════════════════════════════════════════════════
+// Tabs
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'))
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'))
+    t.classList.add('active')
+    document.getElementById('p-' + t.dataset.tab).classList.add('active')
+    if (t.dataset.tab === 'monitor') { initLogTerminal() }
+    if (t.dataset.tab === 'dev') { initDevTerminal() }
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// Mode toggle
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'))
+    b.classList.add('active')
+    currentMode = b.dataset.mode
+    const launch = document.getElementById('p-launch')
+    launch.classList.toggle('mode-real', currentMode === 'real')
+    document.querySelectorAll('.drone-card').forEach(c => {
+      c.classList.toggle('mode-real', currentMode === 'real')
+    })
+    const lbl = document.getElementById('world-label')
+    const inp = document.getElementById('world-input')
+    const sel = document.getElementById('world-select')
+    if (currentMode === 'sim') {
+      lbl.textContent = 'World / map'
+      sel.style.display = 'block'
+      inp.style.display = sel.value === '__custom__' ? 'block' : 'none'
+    } else {
+      lbl.textContent = 'Map path (optional)'
+      sel.style.display = 'none'
+      inp.style.display = 'block'
+      inp.placeholder = '/home/ryan/maps/room.yaml'
+    }
+  })
+})
+
+// World select toggle
+document.getElementById('world-select').addEventListener('change', function() {
+  const inp = document.getElementById('world-input')
+  inp.style.display = this.value === '__custom__' ? 'block' : 'none'
+})
+
+// ═══════════════════════════════════════════════════════════════
+// Drone cards
+// ═══════════════════════════════════════════════════════════════
+function addDrone() {
+  droneCount++
+  const id = droneCount
+  const wrap = document.getElementById('drones-wrap')
+  const card = document.createElement('div')
+  card.className = 'drone-card' + (currentMode === 'real' ? ' mode-real' : '')
+  card.dataset.id = id
+
+  const missionOptions = MISSIONS.map(m =>
+    `<option value="${m}">${m}</option>`
+  ).join('')
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="drone-badge">Drone ${id}</span>
+      <button class="card-remove" title="Remove">×</button>
+    </div>
+    <div class="fields-grid">
+      <div class="field">
+        <label>Prefix</label>
+        <input type="text" placeholder="cf${id}" value="cf${id}" class="f-prefix"/>
+      </div>
+      <div class="field">
+        <label>Mission</label>
+        <select class="f-mission">${missionOptions}</select>
+      </div>
+      <div class="field">
+        <label>Radio Address</label>
+        <input type="text" placeholder="E7E7E7E7E${id}" class="f-radio"/>
+      </div>
+    </div>
+  `
+
+  card.querySelector('.card-remove').addEventListener('click', () => {
+    card.remove()
+  })
+
+  wrap.appendChild(card)
+}
+
+document.getElementById('add-btn').addEventListener('click', addDrone)
+
+// start with one drone
+addDrone()
+
+// ═══════════════════════════════════════════════════════════════
+// Launch
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('launch-btn').addEventListener('click', () => {
+  const config = buildConfig()
+  if (!config) return
+
+  // switch to monitor tab
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'))
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'))
+  document.querySelector('[data-tab="monitor"]').classList.add('active')
+  document.getElementById('p-monitor').classList.add('active')
+  initLogTerminal()
+
+  // build drone status cards
+  renderDroneCards(config.drones)
+
+  // connect battery WebSocket
+  connectBatteryWs()
+
+  // attach world to first drone's extra field for launch-universal.sh
+  if (config.world && config.drones.length > 0) {
+    config.drones[0].extra = config.world
+  }
+  // send launch command
+  ensureLaunchWs(() => {
+    launchWs.send(JSON.stringify({ type: 'launch', config }))
+  })
+})
+
+function buildConfig() {
+  const cards = document.querySelectorAll('.drone-card')
+  if (!cards.length) { alert('Add at least one drone.'); return null }
+  const sel = document.getElementById('world-select')
+  const inp = document.getElementById('world-input')
+  let worldVal = ''
+  if (currentMode === 'real') {
+    worldVal = inp.value.trim()
+  } else {
+    worldVal = sel.value === '__custom__' ? inp.value.trim() : sel.value
+  }
+  const drones = []
+  for (const card of cards) {
+    const prefix = card.querySelector('.f-prefix').value.trim() || `cf${card.dataset.id}`
+    const mission = card.querySelector('.f-mission').value
+    drones.push({ prefix, mission, extra: '' })
+  }
+  return { mode: currentMode, drones, world: worldVal }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Launch WebSocket + log terminal
+// ═══════════════════════════════════════════════════════════════
+let logTerm = null
+let logFit = null
+let logTermReady = false
+
+function initLogTerminal() {
+  if (logTermReady) return
+  logTermReady = true
+  const el = document.getElementById('log-terminal')
+  logTerm = new Terminal({
+    cursorBlink: false,
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: 11,
+    lineHeight: 1.35,
+    theme: {
+      background: '#141414',
+      foreground: '#c8c8c8',
+      cursor: '#7eb8a0',
+      black:'#1e1e1e',red:'#c07070',green:'#7eb8a0',yellow:'#b09060',
+      blue:'#8888b0',magenta:'#a080a0',cyan:'#70a0a0',white:'#c8c8c8',
+      brightBlack:'#505050',brightRed:'#c07070',brightGreen:'#7eb8a0',
+      brightYellow:'#b09060',brightBlue:'#8888b0',brightMagenta:'#a080a0',
+      brightCyan:'#70a0a0',brightWhite:'#e0e0e0',
+    },
+    scrollback: 3000,
+  })
+  logFit = new FitAddon.FitAddon()
+  logTerm.loadAddon(logFit)
+  logTerm.open(el)
+  setTimeout(() => { try { logFit.fit() } catch(e){} }, 100)
+  window.addEventListener('resize', () => { try { logFit.fit() } catch(e){} })
+}
+
+function ensureLaunchWs(cb) {
+  if (launchWs && launchWs.readyState === WebSocket.OPEN) { cb(); return }
+  launchWs = new WebSocket(`ws://${location.host}/ws/launch`)
+  launchWs.onopen = () => { updateConn(true); cb() }
+  launchWs.onclose = () => updateConn(false)
+  launchWs.onmessage = e => {
+    const msg = JSON.parse(e.data)
+    if (msg.type === 'output' && logTerm) logTerm.write(msg.data)
+    if (msg.type === 'cmd' && logTerm) logTerm.write(`\x1b[2m$ ${msg.data}\x1b[0m\r\n`)
+    if (msg.type === 'status') updateLaunchStatus(msg.value)
+  }
+}
+
+document.getElementById('stop-btn').addEventListener('click', () => {
+  if (launchWs && launchWs.readyState === WebSocket.OPEN) {
+    launchWs.send(JSON.stringify({ type: 'stop' }))
+  }
+})
+
+function updateLaunchStatus(val) {
+  const pill = document.getElementById('launch-status-pill')
+  pill.className = 'pill-' + val
+  pill.textContent = val
+}
+
+function updateConn(on) {
+  document.getElementById('conn-dot').classList.toggle('on', on)
+  document.getElementById('conn-label').textContent = on ? 'connected' : 'disconnected'
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Drone status cards
+// ═══════════════════════════════════════════════════════════════
+function renderDroneCards(drones) {
+  const wrap = document.getElementById('drone-cards')
+  wrap.innerHTML = ''
+  droneData = {}
+  drones.forEach(d => {
+    droneData[d.prefix] = { voltage: null, pct: null, state: 'active' }
+    const card = document.createElement('div')
+    card.className = 'drone-status-card'
+    card.id = `dsc-${d.prefix}`
+    card.innerHTML = `
+      <div class="dsc-row1">
+        <div>
+          <div class="dsc-name">${d.prefix}</div>
+          <div class="dsc-mission">${d.mission}</div>
+        </div>
+        <span class="dsc-state state-active" id="state-${d.prefix}">active</span>
+      </div>
+      <div class="batt-block">
+        <div class="voltage-row">
+          <span class="voltage-val" id="volt-${d.prefix}">—</span>
+          <span class="voltage-unit">V</span>
+          <span class="voltage-label" id="battpct-${d.prefix}">—</span>
+        </div>
+        <div class="batt-row">
+          <div class="batt-track"><div class="batt-fill" id="batt-${d.prefix}" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="dsc-actions">
+        <button class="recall-btn" data-prefix="${d.prefix}">Recall</button>
+        <button class="land-btn" data-prefix="${d.prefix}">Land</button>
+      </div>
+    `
+    wrap.appendChild(card)
+  })
+
+  document.querySelectorAll('.recall-btn').forEach(b => {
+    b.addEventListener('click', () => recallDrone(b.dataset.prefix))
+  })
+  document.querySelectorAll('.land-btn').forEach(b => {
+    b.addEventListener('click', () => landDrone(b.dataset.prefix))
+  })
+}
+
+function updateBattery(prefix, voltage, pct) {
+  const fill = document.getElementById(`batt-${prefix}`)
+  const voltEl = document.getElementById(`volt-${prefix}`)
+  const pctEl = document.getElementById(`battpct-${prefix}`)
+  if (!fill) return
+  if (voltEl) voltEl.textContent = voltage != null ? voltage.toFixed(2) : '—'
+  fill.style.width = pct + '%'
+  fill.className = 'batt-fill' + (pct < 20 ? ' low' : pct < 40 ? ' warn' : '')
+  if (pctEl) pctEl.textContent = pct + '%'
+}
+
+function setDroneState(prefix, state) {
+  const el = document.getElementById(`state-${prefix}`)
+  if (!el) return
+  el.className = `dsc-state state-${state}`
+  el.textContent = state
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Camera strip
+// ═══════════════════════════════════════════════════════════════
+function renderCameraStrip(drones) {
+  const strip = document.getElementById('cam-strip')
+  strip.innerHTML = ''
+  drones.forEach(d => {
+    const feed = document.createElement('div')
+    feed.className = 'cam-feed'
+    feed.innerHTML = `
+      <span class="cam-label">${d.prefix} — AI Deck</span>
+      <img id="cam-${d.prefix}"
+           src="http://localhost:8080/stream?topic=/${d.prefix}/camera/image_raw&type=ros_compressed"
+           style="display:none"
+           onerror="this.style.display='none';this.nextSibling.style.display='flex'"
+           onload="this.style.display='block';this.nextSibling.style.display='none'"
+      />
+      <span class="cam-offline" style="display:flex">No signal</span>
+    `
+    strip.appendChild(feed)
+  })
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROS Bridge
+// ═══════════════════════════════════════════════════════════════
+function connectRosBridge(drones) {
+  if (rosBridge) { try { rosBridge.close() } catch(e){} }
+  rosBridge = new ROSLIB.Ros({ url: 'ws://localhost:9090' })
+
+  rosBridge.on('connection', () => {
+    if (logTerm) logTerm.write('\x1b[32m[rosbridge] connected\x1b[0m\r\n')
+    subscribeTopics(drones)
+  })
+  rosBridge.on('error', () => {
+    if (logTerm) logTerm.write('\x1b[33m[rosbridge] not available — battery/map data offline\x1b[0m\r\n')
+  })
+  rosBridge.on('close', () => {
+    if (logTerm) logTerm.write('\x1b[33m[rosbridge] disconnected\x1b[0m\r\n')
+  })
+}
+
+function subscribeTopics(drones) {
+  // Battery data comes from /ws/battery — see connectBatteryWs()
+}
+
+// ── Battery WebSocket ──────────────────────────────────────────────────────
+let batteryWs = null
+
+function connectBatteryWs() {
+  if (batteryWs && batteryWs.readyState === WebSocket.OPEN) return
+  batteryWs = new WebSocket(`ws://${location.host}/ws/battery`)
+
+  batteryWs.onopen = () => {
+    console.log('[battery] connected')
+  }
+  batteryWs.onclose = () => {
+    console.log('[battery] disconnected — retrying in 5s')
+    setTimeout(connectBatteryWs, 5000)
+  }
+  batteryWs.onerror = () => {
+    console.log('[battery] not available')
+  }
+  batteryWs.onmessage = e => {
+    // data: { "cf1": { voltage: 3.95, state: "ok" }, "cf2": { ... } }
+    const data = JSON.parse(e.data)
+    // Auto-create drone cards if the session was launched externally
+    // (e.g. from the terminal) so the UI was never populated via Launch button.
+    const firstDrone = Object.keys(data)[0]
+    if (firstDrone && !document.getElementById(`dsc-${firstDrone}`)) {
+      renderDroneCards(
+        Object.keys(data).map(p => ({ prefix: p, mission: 'unknown' }))
+      )
+    }
+    for (const [drone, info] of Object.entries(data)) {
+      const voltage = info.voltage
+      // Estimate percentage from voltage — Crazyflie: ~4.2V full, ~3.2V empty
+      const pct = Math.round(Math.min(100, Math.max(0, (voltage - 3.2) / (4.2 - 3.2) * 100)))
+      updateBattery(drone, voltage, pct)
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Recall + Land
+// ═══════════════════════════════════════════════════════════════
+let landWs = null
+
+function ensureLandWs(cb) {
+  if (landWs && landWs.readyState === WebSocket.OPEN) { cb(); return }
+  landWs = new WebSocket(`ws://${location.host}/ws/land`)
+  landWs.onopen = () => cb()
+  landWs.onclose = () => { landWs = null }
+  landWs.onmessage = e => {
+    const msg = JSON.parse(e.data)
+    if (msg.type === 'ack') {
+      const prefixes = msg.prefixes || (msg.prefix ? [msg.prefix] : [])
+      prefixes.forEach(p => {
+        setDroneState(p, 'landing')
+        if (logTerm) logTerm.write(`\x1b[36m[land] ${p} landing\x1b[0m\r\n`)
+      })
+    }
+    if (msg.type === 'ack_recall') {
+      const prefixes = msg.prefixes || (msg.prefix ? [msg.prefix] : [])
+      prefixes.forEach(p => {
+        setDroneState(p, 'recalled')
+        if (logTerm) logTerm.write(`\x1b[34m[recall] ${p} returning home\x1b[0m\r\n`)
+      })
+    }
+  }
+}
+
+function recallDrone(prefix) {
+  ensureLandWs(() => {
+    landWs.send(JSON.stringify({ type: 'recall', prefix }))
+  })
+}
+
+function landDrone(prefix) {
+  ensureLandWs(() => {
+    landWs.send(JSON.stringify({ type: 'land', prefix }))
+  })
+}
+
+document.getElementById('land-all-btn').addEventListener('click', () => {
+  const prefixes = Object.keys(droneData)
+  if (!prefixes.length) return
+  ensureLandWs(() => {
+    landWs.send(JSON.stringify({ type: 'land_all', prefixes }))
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// Dev terminal
+// ═══════════════════════════════════════════════════════════════
+function initDevTerminal() {
+  if (devTermReady) { try { devFit.fit() } catch(e){} ; return }
+  devTermReady = true
+  const el = document.getElementById('dev-terminal')
+  devTerm = new Terminal({
+    cursorBlink: true,
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: 11,
+    lineHeight: 1.35,
+    theme: {
+      background: '#0e0e0e',
+      foreground: '#c8c8c8',
+      cursor: '#7eb8a0',
+      black:'#1e1e1e',red:'#c07070',green:'#7eb8a0',yellow:'#b09060',
+      blue:'#8888b0',magenta:'#a080a0',cyan:'#70a0a0',white:'#c8c8c8',
+      brightBlack:'#505050',brightRed:'#c07070',brightGreen:'#7eb8a0',
+      brightYellow:'#b09060',brightBlue:'#8888b0',brightMagenta:'#a080a0',
+      brightCyan:'#70a0a0',brightWhite:'#e0e0e0',
+    },
+    scrollback: 5000,
+  })
+  devFit = new FitAddon.FitAddon()
+  devTerm.loadAddon(devFit)
+  devTerm.open(el)
+  setTimeout(() => { try { devFit.fit() } catch(e){} }, 100)
+  window.addEventListener('resize', () => { try { devFit.fit() } catch(e){} })
+  connectShell()
+}
+
+function connectShell() {
+  if (shellWs && shellWs.readyState === WebSocket.OPEN) return
+  shellWs = new WebSocket(`ws://${location.host}/ws/terminal`)
+  shellWs.onopen = () => {
+    devTerm.write('\x1b[32mshell connected\x1b[0m\r\n')
+    // send initial terminal size
+    shellWs.send(JSON.stringify({ type: 'resize', cols: devTerm.cols, rows: devTerm.rows }))
+  }
+  shellWs.onclose = () => devTerm.write('\r\n\x1b[33mshell disconnected\x1b[0m\r\n')
+  shellWs.onerror = () => devTerm.write('\r\n\x1b[31mshell connection error\x1b[0m\r\n')
+  shellWs.onmessage = e => {
+    const msg = JSON.parse(e.data)
+    if (msg.type === 'output') devTerm.write(msg.data)
+  }
+
+  devTerm.onData(data => {
+    if (shellWs && shellWs.readyState === WebSocket.OPEN) {
+      shellWs.send(JSON.stringify({ type: 'input', data }))
+    }
+  })
+
+  devTerm.onResize(({ cols, rows }) => {
+    if (shellWs && shellWs.readyState === WebSocket.OPEN) {
+      shellWs.send(JSON.stringify({ type: 'resize', cols, rows }))
+    }
+  })
+}
+
+// ── Build button ──
+document.getElementById('build-btn').addEventListener('click', () => {
+  const btn = document.getElementById('build-btn')
+  if (btn.classList.contains('building')) return
+
+  // switch to Dev tab so the user can watch output
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'))
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'))
+  document.querySelector('[data-tab="dev"]').classList.add('active')
+  document.getElementById('p-dev').classList.add('active')
+  initDevTerminal()
+
+  btn.classList.add('building')
+  btn.textContent = 'Building...'
+
+  if (shellWs && shellWs.readyState === WebSocket.OPEN) {
+    shellWs.send(JSON.stringify({ type: 'input', data: 'bash ~/capstone_beta/scripts/build-project.sh\r' }))
+  } else {
+    devTerm.write('\x1b[33mShell not connected — open Dev tab first and wait for connection\x1b[0m\r\n')
+  }
+
+  // re-enable button after a delay (build takes time; shell output will show progress)
+  setTimeout(() => {
+    btn.classList.remove('building')
+    btn.textContent = 'Build Project'
+  }, 1000)
+})
+
+
+;(function init() {
+  // lightweight connectivity check — poll the HTTP root rather than spawning a bash PTY
+  async function checkConn() {
+    try { 
+      await fetch('/', { method: 'HEAD', cache: 'no-store' })
+      updateConn(true)
+    } catch {
+      updateConn(false)
+    }
+  }
+  checkConn()
+  setInterval(checkConn, 10000)
+})()
+</script>
+</body>
+</html>

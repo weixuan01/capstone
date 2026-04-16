@@ -14,6 +14,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from crazyflie_interfaces.srv import Takeoff, Land, NotifySetpointsStop
 from crazyflie_interfaces.msg import Hover
+from std_msgs.msg import Float32
 import time
 
 class VelMux(Node):
@@ -26,12 +27,24 @@ class VelMux(Node):
         self.hover_height  = self.get_parameter('hover_height').value
         robot_prefix  = self.get_parameter('robot_prefix').value
         incoming_twist_topic  = self.get_parameter('incoming_twist_topic').value
+
+        # Current altitude setpoint. Starts at hover_height and is overridden
+        # by the CA node via /{prefix}/target_height during resolution.
+        self.current_hover_height = self.hover_height
         
         self.subscription = self.create_subscription(
             Twist,
             robot_prefix + incoming_twist_topic,
             self.cmd_vel_callback,
             10)
+
+        # CA node publishes altitude separation targets here.
+        self.create_subscription(
+            Float32,
+            robot_prefix + '/target_height',
+            self._target_height_callback,
+            10)
+
         self.msg_cmd_vel = Twist()
         self.received_first_cmd_vel = False
         timer_period = 0.05
@@ -49,12 +62,18 @@ class VelMux(Node):
         self.get_logger().info(f"Velocity Multiplexer set for {robot_prefix}"+
                                f" with height {self.hover_height} m using the {incoming_twist_topic} topic")
 
+    def _target_height_callback(self, msg: Float32):
+        """Override the hover altitude when the CA node requests separation.
+        Only acts after takeoff — ignored on the ground."""
+        if self.cf_has_taken_off:
+            self.current_hover_height = float(msg.data)
+            self.get_logger().debug(
+                f'[VelMux] target_height override → {self.current_hover_height:.2f}m')
+
     def cmd_vel_callback(self, msg):
         self.msg_cmd_vel = msg
-        # This is to handle the zero twist messages from teleop twist keyboard closing
-        # or else the crazyflie would constantly take off again.
         msg_is_zero = msg.linear.x == 0.0 and msg.linear.y == 0.0 and msg.angular.z == 0.0 and msg.linear.z == 0.0
-        if  msg_is_zero is False and self.received_first_cmd_vel is False and msg.linear.z >= 0.0:
+        if msg_is_zero is False and self.received_first_cmd_vel is False and msg.linear.z >= 0.0:
             self.received_first_cmd_vel = True
 
     def timer_callback(self):
@@ -68,12 +87,14 @@ class VelMux(Node):
 
             self.cf_has_taken_off = True
             self.takeoff_until = now + 2.0
+            # Sync current_hover_height to actual takeoff height
+            self.current_hover_height = self.hover_height
             return
 
         if self.received_first_cmd_vel and self.cf_has_taken_off:
             if self.msg_cmd_vel.linear.z >= 0.0:
                 msg = Hover()
-                msg.z_distance = self.hover_height
+                msg.z_distance = self.current_hover_height  # CA node can override this
 
                 # During takeoff, force pure hover
                 if now < self.takeoff_until:
@@ -98,6 +119,8 @@ class VelMux(Node):
                 self.cf_has_taken_off = False
                 self.received_first_cmd_vel = False
                 self.takeoff_until = 0.0
+                # Reset hover height for next flight
+                self.current_hover_height = self.hover_height
 
 def main(args=None):
     rclpy.init(args=args)

@@ -12,16 +12,9 @@ from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster
 
 import tf_transformations
-<<<<<<< Updated upstream
-=======
-import math
-import numpy as np
-import time
-
-GLOBAL_SIZE_X = 20.0
-GLOBAL_SIZE_Y = 20.0
-MAP_RES = 0.1
->>>>>>> Stashed changes
+from std_msgs.msg import Int32
+from visualization_msgs.msg import Marker, MarkerArray
+from builtin_interfaces.msg import Duration
 
 
 class SimpleMapperMultiranger(Node):
@@ -61,6 +54,14 @@ class SimpleMapperMultiranger(Node):
             Odometry, self.robot_prefix + '/odom', self.odom_subscribe_callback, 10)
         self.ranges_subscriber = self.create_subscription(
             LaserScan, self.robot_prefix + '/scan', self.scan_subscribe_callback, 10)
+        self.prediction_subscriber = self.create_subscription(
+            Int32, '/aideck/digit_prediction', self.prediction_callback, 10)
+        self.marker_publisher = self.create_publisher(
+            MarkerArray, self.robot_prefix + '/digit_markers', 10)
+
+        self.pending_digit = None
+        self.digit_markers = []
+        self.next_marker_id = 0
 
         self.position = [0.0, 0.0, 0.0]
         self.angles = [0.0, 0.0, 0.0]
@@ -96,6 +97,71 @@ class SimpleMapperMultiranger(Node):
         self.get_logger().info(
             f"Simple mapper set for {self.robot_prefix}. Map {self.map_size_x:.1f}m x {self.map_size_y:.1f}m @ {self.map_resolution:.2f}m/cell"
         )
+
+    def prediction_callback(self, msg):
+        self.pending_digit = int(msg.data)
+
+    def get_wall_points(self):
+        points = {}
+        o = self.position
+        yaw = self.angles[2]
+
+        roll = 0.0
+        pitch = 0.0
+
+        r_back = self.ranges[0]
+        r_right = self.ranges[1]
+        r_front = self.ranges[2]
+        r_left = self.ranges[3]
+
+        if r_left < self.range_max and r_left != 0.0 and not math.isinf(r_left):
+            left = [o[0], o[1] + r_left, o[2]]
+            points["left"] = self.rot(roll, pitch, yaw, o, left)
+
+        if r_right < self.range_max and r_right != 0.0 and not math.isinf(r_right):
+            right = [o[0], o[1] - r_right, o[2]]
+            points["right"] = self.rot(roll, pitch, yaw, o, right)
+
+        if r_front < self.range_max and r_front != 0.0 and not math.isinf(r_front):
+            front = [o[0] + r_front, o[1], o[2]]
+            points["front"] = self.rot(roll, pitch, yaw, o, front)
+
+        if r_back < self.range_max and r_back != 0.0 and not math.isinf(r_back):
+            back = [o[0] - r_back, o[1], o[2]]
+            points["back"] = self.rot(roll, pitch, yaw, o, back)
+
+        return points
+
+    def add_digit_marker(self, x_map, y_map, digit_text):
+        marker = Marker()
+        marker.header.frame_id = 'map'
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = 'digit_labels'
+        marker.id = self.next_marker_id
+        self.next_marker_id += 1
+        marker.type = Marker.TEXT_VIEW_FACING
+        marker.action = Marker.ADD
+
+        marker.pose.position.x = float(x_map)
+        marker.pose.position.y = float(y_map)
+        marker.pose.position.z = 0.25
+        marker.pose.orientation.w = 1.0
+
+        marker.scale.z = 0.25
+        marker.color.r = 1.0
+        marker.color.g = 1.0
+        marker.color.b = 1.0
+        marker.color.a = 1.0
+
+        marker.text = str(digit_text)
+        marker.lifetime = Duration(sec=0, nanosec=0)
+
+        self.digit_markers.append(marker)
+
+    def publish_digit_markers(self):
+        arr = MarkerArray()
+        arr.markers = self.digit_markers
+        self.marker_publisher.publish(arr)
 
     def publish_map_to_odom_tf(self):
         t = TransformStamped()
@@ -226,7 +292,8 @@ class SimpleMapperMultiranger(Node):
         if not self.ready_to_map():
             return
 
-        data = self.rotate_and_create_points()
+        wall_points = self.get_wall_points()
+        data = list(wall_points.values())
 
         robot_x_map, robot_y_map = self.transform_odom_to_map_xy(self.position[0], self.position[1])
         robot_mx, robot_my = self.world_to_grid(robot_x_map, robot_y_map)
@@ -249,7 +316,16 @@ class SimpleMapperMultiranger(Node):
 
             self.map[self.map_index(point_mx, point_my)] = 100
 
+        front_point = wall_points.get("front", None)
+
+        if self.pending_digit is not None and front_point is not None:
+            px_odom, py_odom, _ = front_point
+            px_map, py_map = self.transform_odom_to_map_xy(px_odom, py_odom)
+            self.add_digit_marker(px_map, py_map, str(self.pending_digit))
+            self.pending_digit = None
+
         self.publish_map()
+        self.publish_digit_markers()
 
     def publish_map(self):
         msg = OccupancyGrid()
@@ -332,19 +408,10 @@ class SimpleMapperMultiranger(Node):
 
 
 def main(args=None):
-<<<<<<< Updated upstream
     rclpy.init(args=args)
     node = SimpleMapperMultiranger()
     rclpy.spin(node)
     node.destroy_node()
-=======
-    
-    rclpy.init(args=args)
-    time.sleep(3)
-    simple_mapper_multiranger = SimpleMapperMultiranger()
-    rclpy.spin(simple_mapper_multiranger)
-    rclpy.destroy_node()
->>>>>>> Stashed changes
     rclpy.shutdown()
 
 

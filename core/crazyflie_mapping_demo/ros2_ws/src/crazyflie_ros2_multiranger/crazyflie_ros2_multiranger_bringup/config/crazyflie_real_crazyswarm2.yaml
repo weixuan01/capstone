@@ -1,7 +1,7 @@
 # named list of all robots
 robots:
   cf1:
-    enabled: false
+    enabled: true
     uri: radio://0/80/2M/E7E7E7E7E7
     initial_position: [0.0, 0.0, 0.0]
     type: cf21  # see robot_types
@@ -13,11 +13,6 @@ robots:
     initial_position: [1.0, 0.0, 0.0]
     type: cf21  # see robot_types
     
-  crazyflie_user_real:
-    enabled: false
-    uri: radio://0/80/2M/E7E7E7E7E7
-    initial_position: [0.0, 0.0, 0.0]
-    type: cf21  # see robot_types
 
 # Definition of the various robot types
 robot_types:
@@ -41,6 +36,8 @@ all:
         frequency: 10 # Hz
       scan:
         frequency: 10 # Hz
+      status:
+        frequency: 1 # Hz
   firmware_params:
     stabilizer:
       estimator: 2 # 1: complementary, 2: kalman

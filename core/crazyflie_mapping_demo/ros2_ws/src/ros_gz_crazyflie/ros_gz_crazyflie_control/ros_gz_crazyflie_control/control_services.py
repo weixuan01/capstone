@@ -1,5 +1,6 @@
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Float32
 
 import rclpy
 from rclpy.node import Node
@@ -9,9 +10,9 @@ class ControlServices(Node):
 
     def __init__(self):
         super().__init__('control_services')
-        self.declare_parameter('hover_height', 0.5)
+        self.declare_parameter('hover_height', 0.3)
         self.declare_parameter('robot_prefix', '/crazyflie')
-        self.declare_parameter('incoming_twist_topic', '/cmd_vel')
+        self.declare_parameter('incoming_twist_topic', '/cmd_vel_safe')
         self.declare_parameter('max_ang_z_rate', 0.4)
 
         hover_height = self.get_parameter('hover_height').value
@@ -20,8 +21,20 @@ class ControlServices(Node):
         max_ang_z_rate = self.get_parameter('max_ang_z_rate').value
 
         self.publisher_ = self.create_publisher(Twist, robot_prefix + '/cmd_vel', 10)
-        self.subscriber = self.create_subscription(Odometry, robot_prefix + '/odom', self.odometry_callback, 10)
-        self.subscriber = self.create_subscription(Twist, robot_prefix + incoming_twist_topic, self.cmd_vel_callback, 10)
+        self.create_subscription(Odometry, robot_prefix + '/odom', self.odometry_callback, 10)
+        self.create_subscription(Twist, robot_prefix + incoming_twist_topic, self.cmd_vel_callback, 10)
+
+        # Receive altitude setpoints from the collision avoidance node.
+        # When a message arrives and the drone is flying, desired_height is
+        # overridden so the height PID tracks the CA-commanded altitude.
+        # Messages are ignored before takeoff to avoid disrupting the
+        # takeoff sequence.
+        self.create_subscription(
+            Float32,
+            robot_prefix + '/target_height',
+            self._target_height_callback,
+            10)
+
         self.timer = self.create_timer(0.1, self.timer_callback)
 
         self.takeoff_command = False
@@ -83,6 +96,14 @@ class ControlServices(Node):
 
     def odometry_callback(self, msg):
         self.current_pose = msg.pose.pose
+
+    def _target_height_callback(self, msg: Float32):
+        # Only honour CA altitude commands once the drone is flying.
+        # Ignoring them pre-takeoff prevents the CA node's continuous
+        # CRUISE_ALTITUDE broadcasts from interfering with the takeoff sequence.
+        if self.is_flying:
+            self.desired_height = float(msg.data)
+            self.keep_height = True
 
     def takeoff_callback(self, request, response):
         self.takeoff_command = True

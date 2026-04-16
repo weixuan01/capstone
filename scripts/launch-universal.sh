@@ -14,7 +14,8 @@
 #
 #     prefix     ROS 2 namespace for this drone, e.g. cf1, cf2
 #     type       One of: wallfollowing | manual | square |
-#                        frontier-exploration | map-user
+#                        frontier-exploration | frontier-exploration-swarm |
+#                        map-user
 #     extra      Optional third field:
 #                  - sim drones (non map-user): Gazebo world name
 #                    e.g. maze, crazyflie_world, circle-maze
@@ -24,6 +25,7 @@
 #
 # Examples:
 #   ./launch-universal.sh sim cf1:frontier-exploration:maze cf2:frontier-exploration
+#   ./launch-universal.sh sim cf1:frontier-exploration-swarm:maze cf2:frontier-exploration-swarm
 #   ./launch-universal.sh sim cf1:map-user:/home/ryan/maps/room.yaml
 #   ./launch-universal.sh real cf1:frontier-exploration cf2:map-user
 #   ./launch-universal.sh real cf1:manual
@@ -35,24 +37,12 @@
 
 BASE_DIR=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")")
 ROS2_WS="$BASE_DIR/../core/crazyflie_mapping_demo/ros2_ws"
-BRINGUP_PKG="crazyflie_ros2_multiranger_bringup"   # ROS 2 package containing all launch files
+BRINGUP_PKG="crazyflie_ros2_multiranger_bringup"
 
-VALID_TYPES=("wallfollowing" "manual" "square" "frontier-exploration" "map-user" "ai")
+VALID_TYPES=("wallfollowing" "manual" "square" "frontier-exploration" "frontier-exploration-swarm" "map-user" "object-detection")
 
 # -----------------------------------------------------------------------------
 # LAUNCH FILE MAPPING
-#
-# Maps each drone type to its shared and per-drone launch files.
-# Edit this section if you rename a file or add a new drone type.
-#
-# Format:
-#   SHARED_LAUNCH_REAL   — launched once for all drones in real mode
-#   SHARED_LAUNCH_SIM    — launched once for all drones in sim mode
-#   PER_DRONE_LAUNCH_<TYPE>_REAL  — launched once per drone in real mode
-#   PER_DRONE_LAUNCH_<TYPE>_SIM   — launched once per drone in sim mode
-#
-# Use "none" if a type has no per-drone launch file for that mode
-# (e.g. manual — its teleop terminal is opened directly by this script).
 # -----------------------------------------------------------------------------
 
 SHARED_LAUNCH_REAL="shared_real.launch.py"
@@ -60,20 +50,22 @@ SHARED_LAUNCH_SIM="shared_sim.launch.py"
 
 declare -A PER_DRONE_LAUNCH_REAL=(
     ["frontier-exploration"]="frontier_exploration_real.launch.py"
+    ["frontier-exploration-swarm"]="frontier_exploration_swarm_real.launch.py"
     ["wallfollowing"]="wallfollowing_real.launch.py"
     ["square"]="square_real.launch.py"
     ["map-user"]="map_user_real.launch.py"
     ["manual"]="none"
-    ["ai"]="ai_real.launch.py"
+    ["object-detection"]="ai_real.launch.py"
 )
 
 declare -A PER_DRONE_LAUNCH_SIM=(
     ["frontier-exploration"]="frontier_exploration_sim.launch.py"
+    ["frontier-exploration-swarm"]="frontier_exploration_swarm_sim.launch.py"
     ["wallfollowing"]="wallfollowing_sim.launch.py"
     ["square"]="square_sim.launch.py"
     ["map-user"]="map_user_sim.launch.py"
     ["manual"]="none"
-    ["ai"]="ai_sim.launch.py"
+    ["object-detection"]="ai_sim.launch.py"
 )
 
 # -----------------------------------------------------------------------------
@@ -88,11 +80,13 @@ display_help() {
     echo "  DRONE_SPEC   <prefix>:<type>[:<extra>]"
     echo ""
     echo "  Types:"
-    echo "    wallfollowing        Follow walls autonomously"
-    echo "    manual               Keyboard teleoperation"
-    echo "    square               Fly a square pattern"
-    echo "    frontier-exploration Explore unknown space autonomously"
-    echo "    map-user             Navigate using a pre-built or blank map"
+    echo "    wallfollowing              Follow walls autonomously"
+    echo "    manual                     Keyboard teleoperation"
+    echo "    square                     Fly a square pattern"
+    echo "    frontier-exploration       Single-drone autonomous exploration"
+    echo "    frontier-exploration-swarm Multi-drone coordinated exploration"
+    echo "                               (uses centralised goal assigner)"
+    echo "    map-user                   Navigate using a pre-built or blank map"
     echo ""
     echo "  Third field (optional):"
     echo "    sim mode:            Gazebo world name (e.g. maze, crazyflie_world)"
@@ -102,6 +96,7 @@ display_help() {
     echo ""
     echo "Examples:"
     echo "  ./launch-universal.sh sim cf1:frontier-exploration:maze cf2:frontier-exploration"
+    echo "  ./launch-universal.sh sim cf1:frontier-exploration-swarm:maze cf2:frontier-exploration-swarm"
     echo "  ./launch-universal.sh sim cf1:map-user:/home/ryan/maps/room.yaml"
     echo "  ./launch-universal.sh real cf1:frontier-exploration cf2:map-user"
     echo "  ./launch-universal.sh real cf1:manual"
@@ -114,7 +109,7 @@ display_help() {
 # -----------------------------------------------------------------------------
 
 MODE=$1
-shift  # Remove MODE so "$@" now contains only drone specs
+shift
 
 if [[ "$MODE" != "sim" && "$MODE" != "real" ]]; then
     echo "ERROR: MODE must be 'sim' or 'real'. Got: '$MODE'"
@@ -128,15 +123,14 @@ fi
 
 # -----------------------------------------------------------------------------
 # Step 2: Parse drone specs into parallel arrays
-#
-# Each spec:  cf1:frontier-exploration:maze
-#              ^prefix  ^type           ^extra (world name or map path)
 # -----------------------------------------------------------------------------
 
 declare -a PREFIXES
 declare -a TYPES
 declare -a MAPS
 WORLD=""
+MAP_FILE=""
+SWARM_ACTIVE="false"   # set true if any drone uses frontier-exploration-swarm
 
 for spec in "$@"; do
     IFS=':' read -r -a parts <<< "$spec"
@@ -165,20 +159,36 @@ for spec in "$@"; do
     TYPES+=("$type")
     MAPS+=("$extra")
 
-    # Extract the Gazebo world name from the third field when:
-    #   - It is non-empty
-    #   - It does NOT start with '/' (file paths start with /; world names don't)
-    #   - The type is not map-user (map-user uses the third field for a map path)
-    #   - We haven't already found a world name
+    # Check if this drone uses the swarm explorer
+    if [[ "$type" == "frontier-exploration-swarm" ]]; then
+        SWARM_ACTIVE="true"
+    fi
+
+    # Extract Gazebo world name from third field when applicable
     if [[ -n "$extra" && "$extra" != /* && "$type" != "map-user" && -z "$WORLD" ]]; then
         WORLD="$extra"
+    fi
+
+    # Extract map file path from third field when applicable (any drone type with an absolute path)
+    if [[ -n "$extra" && "$extra" == /* && -z "$MAP_FILE" ]]; then
+        MAP_FILE="$extra"
     fi
 done
 
 DRONE_COUNT=${#PREFIXES[@]}
 
-# Build the prefixes list string for the shared launch file: [/cf1,/cf2]
+# Build the prefixes list string: [/cf1,/cf2]
 PREFIXES_LIST=$(IFS=','; echo "[${PREFIXES[*]}]")
+
+# Build the swarm-only prefixes list for the goal assigner: [/cf1,/cf2]
+# Only includes drones using frontier-exploration-swarm.
+SWARM_PREFIXES=()
+for i in "${!TYPES[@]}"; do
+    if [[ "${TYPES[$i]}" == "frontier-exploration-swarm" ]]; then
+        SWARM_PREFIXES+=("${PREFIXES[$i]}")
+    fi
+done
+SWARM_PREFIXES_LIST=$(IFS=','; echo "[${SWARM_PREFIXES[*]}]")
 
 # -----------------------------------------------------------------------------
 # Step 3: Source ROS 2 workspace
@@ -199,19 +209,31 @@ for i in "${!PREFIXES[@]}"; do
     echo "  ${PREFIXES[$i]}  →  ${TYPES[$i]}${extra_info}"
 done
 [[ -n "$WORLD" ]] && echo "  Gazebo world: $WORLD"
+[[ "$SWARM_ACTIVE" == "true" ]] && echo "  Swarm goal assigner: ENABLED (drones: $SWARM_PREFIXES_LIST)"
 echo ""
 
 # -----------------------------------------------------------------------------
 # Step 5: Launch the shared file
-# Starts: crazyflie_server (real) or Gazebo simulator (sim) + shared_mapper + rviz
+# Passes launch_goal_assigner=true when any swarm drone is present so the
+# shared launch file knows to start the goal_assigner node.
 # -----------------------------------------------------------------------------
 
 if [[ "$MODE" == "real" ]]; then
     SHARED_FILE="$SHARED_LAUNCH_REAL"
-    SHARED_ARGS=("robot_prefixes:=$PREFIXES_LIST")
+    SHARED_ARGS=(
+        "robot_prefixes:=$PREFIXES_LIST"
+        "launch_goal_assigner:=$SWARM_ACTIVE"
+        "swarm_prefixes:=$SWARM_PREFIXES_LIST"
+    )
+    [[ -n "$MAP_FILE" ]] && SHARED_ARGS+=("map_file:=$MAP_FILE")
 else
     SHARED_FILE="$SHARED_LAUNCH_SIM"
-    SHARED_ARGS=("robot_prefixes:=$PREFIXES_LIST")
+    SHARED_ARGS=(
+        "robot_prefixes:=$PREFIXES_LIST"
+        "launch_goal_assigner:=$SWARM_ACTIVE"
+        "swarm_prefixes:=$SWARM_PREFIXES_LIST"
+    )
+    [[ -n "$MAP_FILE" ]] && SHARED_ARGS+=("map_file:=$MAP_FILE")
     [[ -n "$WORLD" ]] && SHARED_ARGS+=("world:=$WORLD")
 fi
 
@@ -220,7 +242,6 @@ ros2 launch "$BRINGUP_PKG" "$SHARED_FILE" "${SHARED_ARGS[@]}" &
 
 # -----------------------------------------------------------------------------
 # Step 6: Launch one per-drone file per drone
-# Each drone gets: vel_mux (real only) + its behaviour node(s)
 # -----------------------------------------------------------------------------
 
 for i in "${!PREFIXES[@]}"; do
@@ -228,7 +249,6 @@ for i in "${!PREFIXES[@]}"; do
     type="${TYPES[$i]}"
     map="${MAPS[$i]}"
 
-    # Look up the correct per-drone launch file for this type and mode
     if [[ "$MODE" == "real" ]]; then
         launch_file="${PER_DRONE_LAUNCH_REAL[$type]}"
     else
@@ -244,28 +264,18 @@ for i in "${!PREFIXES[@]}"; do
         continue
     fi
 
-    # Warn and skip if no launch file is configured for this type+mode
     if [[ "$launch_file" == "none" || -z "$launch_file" ]]; then
-        echo "WARNING: CONFIGNo launch file configured for type '$type' in $MODE mode. Skipping $prefix."
+        echo "WARNING: No launch file configured for type '$type' in $MODE mode. Skipping $prefix."
         continue
     fi
 
-    # Warn and skip if the launch file is missing from disk
-    DRONE_FILE="$launch_file"
-    if [[ -z "$DRONE_FILE" ]]; then
-        echo "WARNING: MISSING No launch file configured for type '$type' in $MODE mode. Skipping $prefix."
-        continue
-    fi
-
-    # Build per-drone launch arguments
     DRONE_ARGS=("robot_prefix:=$prefix")
-    # Only pass map_file if non-empty — ROS 2 rejects empty string argument values
     if [[ -n "$map" ]]; then
         DRONE_ARGS+=("map_file:=$map")
     fi
 
     echo "Starting $prefix ($type) → $launch_file"
-    ros2 launch "$BRINGUP_PKG" "$DRONE_FILE" "${DRONE_ARGS[@]}" &
+    ros2 launch "$BRINGUP_PKG" "$launch_file" "${DRONE_ARGS[@]}" &
 done
 
 # -----------------------------------------------------------------------------

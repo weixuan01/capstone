@@ -9,23 +9,31 @@ enters the safety radius.  Transparent during normal flight.
 
 Topic chain:
   exploration_node  →  /{prefix}/cmd_vel_raw   (planner output)
-  this node         →  /{prefix}/cmd_vel        (safe output to control node)
+  this node         →  /{prefix}/cmd_vel_safe   (safe output to control node)
+  this node         →  /{prefix}/target_height  (altitude setpoint to control node)
 
 Peer positions are shared via the global /peer_poses topic.
 Each drone publishes its own position as a PointStamped where:
     point.x, point.y  = world x/y position
     point.z           = world z position (actual altitude)
-    header.frame_id   = identity hash as string (for self-filtering)
+    header.frame_id   = robot_prefix string (for self-filtering)
 
 Resolution manoeuvre — altitude separation:
   When two drones come within PEER_SAFE_DIST of each other, they
-  independently compare their x positions to decide who climbs and
-  who descends.  Higher x climbs by ALTITUDE_STEP, lower x descends
-  by ALTITUDE_STEP.  If x values are within X_TIE_TOLERANCE, y is
-  used instead.  If y is also tied, identity hash breaks the tie.
+  independently compare their robot_prefix strings to decide who climbs and
+  who descends.  Higher prefix string climbs by ALTITUDE_STEP, lower prefix
+  descends by ALTITUDE_STEP.  This is fully deterministic — both drones run
+  the same comparison independently and always reach opposite conclusions,
+  so roles never conflict regardless of position or timing.
   Horizontal planner commands are passed through unchanged during
   resolution so each drone keeps navigating toward its goal.
   Once the peer clears PEER_SAFE_DIST, altitude returns to cruise.
+
+  Altitude separation is commanded via /{prefix}/target_height
+  (std_msgs/Float32).  control_services subscribes to this topic and
+  overrides desired_height when a message arrives.  linear.z in
+  cmd_vel_safe is always 0.0 so control_services height PID is not
+  disrupted.
 
 States:
   CLEAR      — no peer within PEER_SAFE_DIST; commands passed through unchanged
@@ -37,24 +45,37 @@ from rclpy.node import Node
 
 from geometry_msgs.msg import Twist, PointStamped
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Float32
 
 import math
 from enum import Enum, auto
 
 # ── Safety radii ──────────────────────────────────────────────────────────────
-PEER_SAFE_DIST    = 0.3   # metres — resolution zone; altitude separation activates
-PEER_POSE_TIMEOUT = 5.0   # seconds — ignore stale peer poses (crashed / landed)
+PEER_SAFE_DIST    = 0.45   # metres — resolution zone; altitude separation activates
+PEER_POSE_TIMEOUT = 1.5   # seconds — ignore stale peer poses (crashed / landed)
 
 # ── Altitude separation ───────────────────────────────────────────────────────
-CRUISE_ALTITUDE   = 0.3   # metres — normal flight altitude (match TAKEOFF_HEIGHT)
+CRUISE_ALTITUDE   = 0.3   # metres — normal flight altitude (match hover_height)
 ALTITUDE_STEP     = 0.15  # metres — each drone moves this far from cruise altitude
-X_TIE_TOLERANCE   = 0.05  # metres — x positions closer than this use y as tiebreaker
 
 # ── Position publish rate ─────────────────────────────────────────────────────
 POSE_PUB_INTERVAL = 0.1   # seconds — publish own pose at 10 Hz
 
-# ── Velocity limits (match exploration node) ─────────────────────────────────
-MAX_SPEED         = 0.3
+# ── Takeoff detection threshold ───────────────────────────────────────────────
+# Must be ABOVE CRUISE_ALTITUDE so that control_services sees
+# position.z > takeoff_height and sets is_flying=True before this node
+# starts zeroing linear.z in _strip_z.
+#
+# If FLYING_THRESHOLD is below or equal to CRUISE_ALTITUDE (takeoff_height),
+# the CA node zeros linear.z before control_services crosses its takeoff
+# threshold, so is_flying never becomes True, the height PID never activates,
+# and each new planner linear.z > 0 restarts the takeoff loop — causing
+# continuous upward drift.
+#
+# By setting this above CRUISE_ALTITUDE, the drone is guaranteed to have
+# already crossed takeoff_height (and completed the takeoff sequence in
+# control_services) before _strip_z begins zeroing linear.z.
+FLYING_THRESHOLD  = CRUISE_ALTITUDE + 0.05  # metres — must be > takeoff_height
 
 
 class CAState(Enum):
@@ -70,21 +91,20 @@ class CollisionAvoidanceNode(Node):
         self.declare_parameter('robot_prefix', '/crazyflie')
         robot_prefix = self.get_parameter('robot_prefix').value
 
-        # ── Identity ──────────────────────────────────────────────────────────
-        # Stored both as float (for arithmetic comparison) and string (for
-        # embedding in header.frame_id so peers can filter our messages).
-        self._identity     = float(hash(robot_prefix) % 1_000_000)
-        self._identity_str = str(int(self._identity))
+        self._identity_str = robot_prefix
 
         # ── Internal state ────────────────────────────────────────────────────
         self.position      = [0.0, 0.0, 0.0]
         self.yaw           = 0.0
         self.ca_state      = CAState.CLEAR
-
-        # Target altitude — normally CRUISE_ALTITUDE, adjusted during resolution.
         self.target_altitude = CRUISE_ALTITUDE
+        self._is_flying    = False
+        # Locked climb/descend role for the current RESOLUTION encounter.
+        # Set once on entry to RESOLUTION, cleared on exit.
+        # None means no lock held (CLEAR state).
+        self._climb_locked: 'bool | None' = None
 
-        # Maps identity_str → (x, y, z, timestamp)
+        # Maps identity_str (robot_prefix) → (x, y, z, timestamp)
         self.peer_poses: dict = {}
 
         # ── Subscribers ───────────────────────────────────────────────────────
@@ -113,11 +133,17 @@ class CollisionAvoidanceNode(Node):
         self.pose_pub = self.create_publisher(
             PointStamped, '/peer_poses', 10)
 
+        # Altitude setpoint — control_services subscribes to this and overrides
+        # desired_height when a message arrives.
+        self.height_pub = self.create_publisher(
+            Float32, robot_prefix + '/target_height', 10)
+
         # ── Timer — pose broadcast ────────────────────────────────────────────
         self.create_timer(POSE_PUB_INTERVAL, self._timer_callback)
 
         self.get_logger().info(
-            f'[CA] Started. prefix={robot_prefix} id={self._identity_str}')
+            f'[CA] Started. prefix={robot_prefix} id={self._identity_str} '
+            f'flying_threshold={FLYING_THRESHOLD:.2f}m')
 
     # ══════════════════════════════════════════════════════════════════════════
     # Callbacks
@@ -133,27 +159,28 @@ class CollisionAvoidanceNode(Node):
         cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
         self.yaw = math.atan2(siny, cosy)
 
+        # FLYING_THRESHOLD is set above CRUISE_ALTITUDE so control_services
+        # completes its takeoff sequence (is_flying=True) before this node
+        # starts zeroing linear.z in _strip_z.
+        self._is_flying = self.position[2] > FLYING_THRESHOLD
+
     def _cmd_callback(self, msg: Twist):
-        """Receive a velocity command from the exploration node and filter it."""
         self._process_and_publish(msg)
 
     def _peer_pose_callback(self, msg: PointStamped):
-        """Receive a peer drone's position off /peer_poses.
-        Identity hash is stored as a string in header.frame_id."""
         if msg.header.frame_id == self._identity_str:
-            return  # own message — discard
+            return
         now = self.get_clock().now().nanoseconds * 1e-9
         key = msg.header.frame_id
         self.peer_poses[key] = (msg.point.x, msg.point.y, msg.point.z, now)
 
     def _timer_callback(self):
-        """Publish own position to /peer_poses at POSE_PUB_INTERVAL."""
         msg = PointStamped()
         msg.header.stamp    = self.get_clock().now().to_msg()
-        msg.header.frame_id = self._identity_str   # identity in frame_id
+        msg.header.frame_id = self._identity_str
         msg.point.x = float(self.position[0])
         msg.point.y = float(self.position[1])
-        msg.point.z = float(self.position[2])      # actual altitude in z
+        msg.point.z = float(self.position[2])
         self.pose_pub.publish(msg)
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -161,96 +188,110 @@ class CollisionAvoidanceNode(Node):
     # ══════════════════════════════════════════════════════════════════════════
 
     def _closest_peer(self):
-        """Return (dist, peer_x, peer_y, peer_z) for the closest active peer,
-        or None if no active peers exist."""
         now    = self.get_clock().now().nanoseconds * 1e-9
         px, py = self.position[0], self.position[1]
         closest  = None
         min_dist = float('inf')
 
-        for peer_x, peer_y, peer_z, t in self.peer_poses.values():
+        for peer_id, (peer_x, peer_y, peer_z, t) in self.peer_poses.items():
             if (now - t) > PEER_POSE_TIMEOUT:
                 continue
             dist = math.hypot(px - peer_x, py - peer_y)
             if dist < min_dist:
                 min_dist = dist
-                closest  = (dist, peer_x, peer_y, peer_z)
+                closest  = (dist, peer_x, peer_y, peer_z, peer_id)
 
         return closest
 
-    def _should_climb(self, peer_x, peer_y):
-        """Return True if this drone should climb, False if it should descend.
-
-        Comparison rules (in order):
-          1. Higher x climbs.
-          2. If x values within X_TIE_TOLERANCE, higher y climbs.
-          3. If y also tied, higher identity hash climbs.
-
-        Both drones run this independently and always reach opposite conclusions
-        because each compares its own value against the peer's value."""
-        my_x, my_y = self.position[0], self.position[1]
-
-        if abs(my_x - peer_x) > X_TIE_TOLERANCE:
-            return my_x > peer_x
-
-        if abs(my_y - peer_y) > X_TIE_TOLERANCE:
-            return my_y > peer_y
-
-        # Tiebreaker — identity hash, always deterministic and opposite for
-        # the two drones since they have different prefixes.
-        return self._identity > float(
-            list(self.peer_poses.keys())[0]) if self.peer_poses else True
-
-    def _repulsion_body_frame(self, dx_world, dy_world, magnitude):
-        pass  # retained for future use
+    def _should_climb(self, peer_id: str) -> bool:
+        """Deterministic climb/descend role assignment based solely on prefix.
+        Higher prefix string climbs, lower descends.  Two drones independently
+        running this comparison always reach opposite conclusions, so roles
+        never conflict regardless of position or timing."""
+        return self._identity_str > peer_id
 
     def _process_and_publish(self, planner_cmd: Twist):
         """Apply CA filter to planner_cmd and publish the result.
 
-        CLEAR      — pass through unchanged. Target altitude is cruise.
-        RESOLUTION — peer within PEER_SAFE_DIST. Set target altitude based on
-                     x/y position comparison. Horizontal planner commands passed
-                     through so the drone keeps navigating while separating
-                     vertically. Once the peer clears, altitude returns to cruise.
+        cmd_vel_safe always has linear.z = 0.0 so control_services height PID
+        is undisturbed.  Altitude separation is commanded separately via the
+        target_height topic, which control_services uses to override
+        desired_height.
+
+        CLEAR      — pass x/y/yaw through unchanged. Publish cruise altitude.
+        RESOLUTION — pass x/y/yaw through unchanged. Publish climb/descend
+                     altitude so the drones separate vertically while continuing
+                     to navigate toward their goals.  The climb/descend role is
+                     evaluated once on entry and locked for the duration of the
+                     encounter to prevent role thrashing as positions cross.
         """
         peer = self._closest_peer()
 
         if peer is None:
+            self._climb_locked = None
             self._set_state(CAState.CLEAR)
-            self.target_altitude = CRUISE_ALTITUDE
-            self.cmd_pub.publish(self._with_altitude(planner_cmd, self.target_altitude))
+            self._publish_target_height(CRUISE_ALTITUDE)
+            self.cmd_pub.publish(self._strip_z(planner_cmd))
             return
 
-        dist, peer_x, peer_y, peer_z = peer
+        dist, peer_x, peer_y, peer_z, peer_id = peer
 
-        # ── RESOLUTION ────────────────────────────────────────────────────────
         if dist < PEER_SAFE_DIST:
-            self._set_state(CAState.RESOLUTION)
-            if self._should_climb(peer_x, peer_y):
+            if self.ca_state != CAState.RESOLUTION:
+                # Entering resolution — evaluate and lock role once.
+                # Never re-evaluate while the peer stays within range.
+                self._climb_locked = self._should_climb(peer_id)
+                self._set_state(CAState.RESOLUTION)
+
+            if self._climb_locked:
                 self.target_altitude = CRUISE_ALTITUDE + ALTITUDE_STEP
             else:
                 self.target_altitude = CRUISE_ALTITUDE - ALTITUDE_STEP
-            self.cmd_pub.publish(self._with_altitude(planner_cmd, self.target_altitude))
+            self._publish_target_height(self.target_altitude)
+            self.cmd_pub.publish(self._strip_z(planner_cmd))
             return
 
-        # ── CLEAR — peer exists but is outside resolution range ───────────────
+        # Peer exists but outside resolution range.
+        # Apply hysteresis: only exit RESOLUTION once the peer has cleared
+        # PEER_SAFE_DIST + 0.1 m to prevent state flickering at the boundary.
+        if self.ca_state == CAState.RESOLUTION and dist < PEER_SAFE_DIST + 0.1:
+            # Still within the hysteresis band — hold RESOLUTION, keep altitude
+            self._publish_target_height(self.target_altitude)
+            self.cmd_pub.publish(self._strip_z(planner_cmd))
+            return
+
+        self._climb_locked = None
         self._set_state(CAState.CLEAR)
         self.target_altitude = CRUISE_ALTITUDE
-        self.cmd_pub.publish(self._with_altitude(planner_cmd, self.target_altitude))
+        self._publish_target_height(CRUISE_ALTITUDE)
+        self.cmd_pub.publish(self._strip_z(planner_cmd))
 
     # ══════════════════════════════════════════════════════════════════════════
     # Helpers
     # ══════════════════════════════════════════════════════════════════════════
 
-    def _with_altitude(self, cmd: Twist, altitude: float) -> Twist:
-        """Return a copy of cmd with linear.z set to the target altitude.
-        The vel_mux interprets linear.z as a hover height setpoint."""
+    def _strip_z(self, cmd: Twist) -> Twist:
+        """Return a copy of cmd with linear.z forced to 0.0 during flight.
+        Before takeoff, linear.z is passed through unchanged so control_services
+        can detect the takeoff signal and complete its takeoff sequence.
+
+        _is_flying uses FLYING_THRESHOLD = CRUISE_ALTITUDE + 0.05, which is
+        above takeoff_height. This guarantees control_services has already set
+        is_flying=True and activated the height PID before this node starts
+        zeroing linear.z. Setting FLYING_THRESHOLD below takeoff_height causes
+        the CA node to cut the takeoff signal before control_services finishes,
+        leaving is_flying=False permanently and causing upward drift."""
         out = Twist()
         out.linear.x  = cmd.linear.x
         out.linear.y  = cmd.linear.y
-        out.linear.z  = float(altitude)
+        out.linear.z  = 0.0 if self._is_flying else cmd.linear.z
         out.angular.z = cmd.angular.z
         return out
+
+    def _publish_target_height(self, height: float):
+        msg = Float32()
+        msg.data = float(height)
+        self.height_pub.publish(msg)
 
     def _set_state(self, new_state: CAState):
         if new_state != self.ca_state:
@@ -265,7 +306,6 @@ def main(args=None):
     rclpy.init(args=args)
     node = CollisionAvoidanceNode()
     rclpy.spin(node)
-    rclpy.destroy_node()
     rclpy.shutdown()
 
 
