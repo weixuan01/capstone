@@ -30,19 +30,19 @@ Pipeline
 
 Termination conditions (same shape as goal_assigner.py)
 -------------------------------------------------------
-  Condition 1 — zero uncovered cells 3 times in a row  → send all home
-  Condition 2 — all drones FAILED, nothing assignable  → send all home
+  Condition 1 - zero uncovered cells 3 times in a row  → send all home
+  Condition 2 - all drones FAILED, nothing assignable  → send all home
 
 Drone lifecycle messages
 ------------------------
 Listens on /{prefix}/goal_status:
-  "REACHED"  — drone finished a spin, mark cells, reassign
-  "FAILED"   — A* failed or drone gave up, don't reassign this point
-  "RECALLED" — drone is going home / landing, remove from pool permanently
+  "REACHED"  - drone finished a spin, mark cells, reassign
+  "FAILED"   - A* failed or drone gave up, don't reassign this point
+  "RECALLED" - drone is going home / landing, remove from pool permanently
 
 Replan triggers (requirement 6)
 -------------------------------
-The set cover is recomputed on a fixed periodic timer — every
+The set cover is recomputed on a fixed periodic timer - every
 PERIODIC_REPLAN_INTERVAL seconds the current plan is thrown away and
 rebuilt from the latest map.  This catches every kind of map change
 (frontier drones extending the map, walls revealed, map shrinking
@@ -53,16 +53,16 @@ position are available.
 Topic summary
 -------------
 Subscribes:
-  /map                              OccupancyGrid  — shared map
-  /{prefix}/odom                    Odometry       — each scanner's position
-  /{prefix}/goal_status             String         — REACHED|FAILED|RECALLED
+  /map                              OccupancyGrid  - shared map
+  /{prefix}/odom                    Odometry       - each scanner's position
+  /{prefix}/goal_status             String         - REACHED|FAILED|RECALLED
 
 Publishes:
-  /{prefix}/assigned_scan_point     Point          — (x,y,0) goal, or
+  /{prefix}/assigned_scan_point     Point          - (x,y,0) goal, or
                                                      (NaN,NaN,0) for go-home
-  /scanner_planner/scan_points      MarkerArray    — all planned spins
-  /scanner_planner/scan_discs       MarkerArray    — 0.5 m discs (req 2)
-  /scanner_planner/scanned_points   MarkerArray    — completed spins
+  /scanner_planner/scan_points      MarkerArray    - all planned spins
+  /scanner_planner/scan_discs       MarkerArray    - 0.5 m discs (req 2)
+  /scanner_planner/scanned_points   MarkerArray    - completed spins
 """
 
 import math
@@ -83,20 +83,20 @@ from visualization_msgs.msg import Marker, MarkerArray
 MAP_RES = 0.1
 
 # ── Coverage parameters ───────────────────────────────────────────────────────
-SCAN_RADIUS       = 1.0                              # metres — sensor range
+SCAN_RADIUS       = 1.0                              # metres - sensor range
 SCAN_RADIUS_CELLS = int(SCAN_RADIUS / MAP_RES)       # 5 cells at 0.1 m/cell
 SAMPLE_STEP_CELLS = SCAN_RADIUS_CELLS                # candidate spacing
 
 # ── Assignment parameters ─────────────────────────────────────────────────────
 ASSIGN_RATE_HZ           = 1.0
-PERIODIC_REPLAN_INTERVAL = 15.0    # seconds — reconsider scan order (req 6)
+PERIODIC_REPLAN_INTERVAL = 15.0    # seconds - reconsider scan order (req 6)
 MIN_GOAL_DIST            = 0.25    # ignore candidates this close to a drone
 
 # ── Termination parameters ────────────────────────────────────────────────────
 ZERO_COVERAGE_LIMIT = 3   # successive empty-coverage ticks before calling done
 
 # ── Visualisation ─────────────────────────────────────────────────────────────
-MARKER_Z = 0.3   # metres — draw markers slightly above the floor
+MARKER_Z = 0.3   # metres - draw markers slightly above the floor
 
 
 class DroneState:
@@ -132,7 +132,7 @@ class ObjectDetectionPlanner(Node):
         self.completed_scan_positions: list = []
 
         # Current set-cover output: ordered list of (wx, wy) world positions.
-        # Ordering within this list does not matter — Hungarian picks per
+        # Ordering within this list does not matter - Hungarian picks per
         # drone from the full list each assignment tick.
         self.scan_points: list = []
 
@@ -207,21 +207,21 @@ class ObjectDetectionPlanner(Node):
                 self._publish_scanned_markers()
                 self.get_logger().info(
                     f'[{prefix}] REACHED ({ds.goal[0]:.2f},{ds.goal[1]:.2f}) '
-                    f'— marked scanned. Total completed: '
+                    f'- marked scanned. Total completed: '
                     f'{len(self.completed_scan_positions)}')
             ds.status = 'REACHED'
             ds.goal   = None
 
         elif status == 'FAILED':
             self.get_logger().warn(
-                f'[{prefix}] FAILED for goal {ds.goal} — clearing.')
+                f'[{prefix}] FAILED for goal {ds.goal} - clearing.')
             ds.status = 'FAILED'
             ds.goal   = None
 
         elif status == 'RECALLED':
-            # Requirement 3 — drone recalled or landed, remove from the pool.
+            # Requirement 3 - drone recalled or landed, remove from the pool.
             self.get_logger().info(
-                f'[{prefix}] RECALLED — removing from scanner pool.')
+                f'[{prefix}] RECALLED - removing from scanner pool.')
             ds.status = 'RECALLED'
             ds.goal   = None
 
@@ -233,7 +233,7 @@ class ObjectDetectionPlanner(Node):
                            msg.info.origin.position.y]
 
     # ══════════════════════════════════════════════════════════════════════════
-    # Main assignment loop — runs at ASSIGN_RATE_HZ
+    # Main assignment loop - runs at ASSIGN_RATE_HZ
     # ══════════════════════════════════════════════════════════════════════════
 
     def _assign_cb(self):
@@ -258,7 +258,7 @@ class ObjectDetectionPlanner(Node):
             self.have_valid_plan = True
 
         # Filter out scan points within SCAN_RADIUS of already-completed spins
-        # (defence in depth — _run_coverage_plan already excludes scanned cells)
+        # (defence in depth - _run_coverage_plan already excludes scanned cells)
         live_points = [
             (wx, wy) for (wx, wy) in self.scan_points
             if not self._is_covered_by_completed(wx, wy)
@@ -304,7 +304,7 @@ class ObjectDetectionPlanner(Node):
         if (now - self.last_plan_time) >= PERIODIC_REPLAN_INTERVAL:
             self.get_logger().info(
                 f'Periodic replan ({PERIODIC_REPLAN_INTERVAL:.0f}s elapsed) '
-                f'— reconsidering optimal scan order.')
+                f'- reconsidering optimal scan order.')
             return True
         return False
 
@@ -336,7 +336,7 @@ class ObjectDetectionPlanner(Node):
                 f'[{prefix}] go-home signal sent (NaN goal).')
 
     # ══════════════════════════════════════════════════════════════════════════
-    # Assignment — Hungarian algorithm over (drones × scan points)
+    # Assignment - Hungarian algorithm over (drones × scan points)
     # ══════════════════════════════════════════════════════════════════════════
 
     def _do_assignments(self) -> bool:
@@ -428,7 +428,7 @@ class ObjectDetectionPlanner(Node):
         return assigned_any
 
     # ══════════════════════════════════════════════════════════════════════════
-    # Coverage planning — greedy set cover over the shared map
+    # Coverage planning - greedy set cover over the shared map
     # ══════════════════════════════════════════════════════════════════════════
 
     def _run_coverage_plan(self):
@@ -443,7 +443,7 @@ class ObjectDetectionPlanner(Node):
         """
         W, H = self.map_width, self.map_height
 
-        # Step 1 — uncovered free cells
+        # Step 1 - uncovered free cells
         free_indices = np.where(self.map_data == 0)[0]
         uncovered    = set()
         for idx in free_indices:
@@ -455,7 +455,7 @@ class ObjectDetectionPlanner(Node):
             self.scan_points = []
             return
 
-        # Step 2 — candidate positions on a coarse grid over free cells
+        # Step 2 - candidate positions on a coarse grid over free cells
         step = max(1, SAMPLE_STEP_CELLS)
         candidates = []
         for r in range(0, H, step):
@@ -467,7 +467,7 @@ class ObjectDetectionPlanner(Node):
             self.scan_points = []
             return
 
-        # Step 3 — greedy set cover
+        # Step 3 - greedy set cover
         sr2 = SCAN_RADIUS_CELLS ** 2
 
         def coverage_set(cr, cc):
@@ -504,7 +504,7 @@ class ObjectDetectionPlanner(Node):
             remaining -= cov_map[best_cand]
             cov_map.pop(best_cand)
 
-        # Step 4 — convert grid cells to world coords
+        # Step 4 - convert grid cells to world coords
         self.scan_points = [self._grid_to_world(r, c) for r, c in selected]
 
         self.get_logger().info(
@@ -557,10 +557,10 @@ class ObjectDetectionPlanner(Node):
     # ══════════════════════════════════════════════════════════════════════════
     #
     # Three namespaces:
-    #   scan_points    yellow spheres  — pending scan queue
-    #   scan_discs     translucent cylinders radius=0.5m — the area each spin
+    #   scan_points    yellow spheres  - pending scan queue
+    #   scan_discs     translucent cylinders radius=0.5m - the area each spin
     #                                                      will cover
-    #   scanned        grey spheres    — completed spins
+    #   scanned        grey spheres    - completed spins
     #
     # Each publisher starts with a DELETEALL to clear the previous frame,
     # matching the style used by goal_assigner.py.
@@ -593,7 +593,7 @@ class ObjectDetectionPlanner(Node):
         self.scan_point_pub.publish(arr)
 
     def _publish_scan_disc_markers(self):
-        """Requirement 2 — draw the 0.5 m disc each spin will cover."""
+        """Requirement 2 - draw the 0.5 m disc each spin will cover."""
         arr   = MarkerArray()
         clear = Marker()
         clear.header.frame_id = 'map'

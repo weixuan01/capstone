@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-Shared mapper for multiple Crazyflie drones using a common lighthouse
-coordinate frame. Each drone's odom and scan topics are subscribed to
-independently, but all drones write into a single shared OccupancyGrid.
+Shared mapper for multiple Crazyflie drones using a common coordinate frame. 
+Each drone's odom and scan topics are subscribed to independently, 
+but all drones write into a single shared OccupancyGrid.
 
 The map origin is set dynamically by averaging the first 10 odometry
 readings received from any drone, so transient startup noise cannot
@@ -16,7 +16,7 @@ Map saving behaviour:
   - Manual save available at any time:
       ros2 service call /save_map std_srvs/srv/Trigger {}
 
-Based on simple_mapper_multiranger.py by K. N. McGuire (Bitcraze AB).
+Based on simple_mapper_multiranger.py 
 """
 
 import os

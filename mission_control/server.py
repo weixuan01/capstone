@@ -216,17 +216,19 @@ async def battery_ws(websocket: WebSocket):
 
 # ── Land WebSocket ───────────────────────────────────────────────────────────
 #
-# Accepts: { "type": "land",     "prefix": "cf1" }
-#          { "type": "land_all", "prefixes": ["cf1", "cf2"] }
-#          { "type": "recall",   "prefix": "cf1" }
+# Accepts: { "type": "land",       "prefix": "cf1" }
+#          { "type": "land_all",   "prefixes": ["cf1", "cf2"] }
+#          { "type": "recall",     "prefix": "cf1" }
+#          { "type": "recall_all", "prefixes": ["cf1", "cf2"] }
 #
 # land / land_all: publishes to /land_command — mission_control forwards a
 #   NaN Point with z=1.0 to /cfX/assigned_goal so the drone lands in place.
 #
-# recall: publishes to /recall_command — mission_control forwards a NaN Point
-#   with z=0.0 to /cfX/assigned_goal so the drone returns home then lands.
+# recall / recall_all: publishes to /recall_command — mission_control forwards
+#   a NaN Point with z=0.0 to /cfX/assigned_goal so the drone returns home
+#   then lands.
 #
-# Both use the persistent rclpy bridge publisher — no subprocesses.
+# All use the persistent rclpy bridge publisher — no subprocesses.
 
 @app.websocket("/ws/land")
 async def land_ws(websocket: WebSocket):
@@ -236,16 +238,19 @@ async def land_ws(websocket: WebSocket):
             raw = await websocket.receive_text()
             msg = json.loads(raw)
 
-            if msg["type"] == "recall":
-                prefixes = [msg.get("prefix", "").lstrip("/")]
+            if msg["type"] in ("recall", "recall_all"):
+                if msg["type"] == "recall":
+                    prefixes = [msg.get("prefix", "").lstrip("/")]
+                else:
+                    prefixes = [p.lstrip("/") for p in msg.get("prefixes", [])]
+
                 prefixes = [p for p in prefixes if p]
                 if prefixes and _ros_bridge is not None:
                     try:
                         _ros_bridge.publish_recall(prefixes)
                     except Exception as e:
                         print(f"[recall] publish failed: {e}", flush=True)
-                    for p in prefixes:
-                        await websocket.send_text(json.dumps({"type": "ack_recall", "prefix": p}))
+                    await websocket.send_text(json.dumps({"type": "ack_recall", "prefixes": prefixes}))
 
             else:
                 # Land in place (land or land_all)

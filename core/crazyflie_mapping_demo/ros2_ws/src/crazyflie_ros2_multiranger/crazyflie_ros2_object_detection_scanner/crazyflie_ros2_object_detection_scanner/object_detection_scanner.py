@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Object-Detection Scanner Drone — works with ObjectDetectionPlanner
+Object-Detection Scanner Drone - works with ObjectDetectionPlanner
 ===================================================================
 State machine:
-  TAKEOFF      — take off and hover
-  WAIT_GOAL    — hover and wait for /{prefix}/assigned_scan_point
-  NAVIGATE     — follow A* waypoints to the assigned scan position
-  SPINNING     — 360-degree spin at scan position (object detection)
-  DONE         — return to start via A* and land (triggered by recall)
-  LANDING      — descend
+  TAKEOFF      - take off and hover
+  WAIT_GOAL    - hover and wait for /{prefix}/assigned_scan_point
+  NAVIGATE     - follow A* waypoints to the assigned scan position
+  SPINNING     - 360-degree spin at scan position (object detection)
+  DONE         - return to start via A* and land (triggered by recall)
+  LANDING      - descend
 
 Relationship to explorer_drone.py
 ---------------------------------
@@ -19,7 +19,7 @@ same wall guidance.  The differences are:
 
   - Listens on /{prefix}/assigned_scan_point (from ObjectDetectionPlanner)
     instead of /{prefix}/assigned_goal.
-  - No initial seed-spin after takeoff — scanner drones assume the map
+  - No initial seed-spin after takeoff - scanner drones assume the map
     already exists (built by frontier-exploration drones).  They go
     straight to WAIT_GOAL.
   - On arrival at a goal, performs a full 360-degree spin, not a short
@@ -28,14 +28,14 @@ same wall guidance.  The differences are:
 Recall / Land protocol (requirement 3)
 --------------------------------------
 Exactly matches explorer_drone.py:
-  x=NaN, z=0.0  — RECALL: return home via DONE state, then land
-  x=NaN, z=1.0  — LAND:   immediate descent
+  x=NaN, z=0.0  - RECALL: return home via DONE state, then land
+  x=NaN, z=1.0  - LAND:   immediate descent
 On receipt of either, the drone publishes "RECALLED" on goal_status
 so the planner removes it from the assignment pool permanently.
 
 The mission-control dashboard publishes these NaN messages via the
 shared mission_control node, which sends them on the frontier goal
-topic /{prefix}/assigned_goal — not /{prefix}/assigned_scan_point.
+topic /{prefix}/assigned_goal - not /{prefix}/assigned_scan_point.
 To keep the Recall/Land buttons working for scanner drones without
 touching mission_control, this node additionally subscribes to
 /{prefix}/assigned_goal and routes any NaN Point it sees there into
@@ -46,7 +46,7 @@ Shared map contribution (requirement 5)
 ---------------------------------------
 This drone runs the multiranger sensor if its deck is fitted and
 contributes to the shared map continuously, same as frontier-exploration
-drones.  Mapping is always on — no gating flag.  The shared_mapper node
+drones.  Mapping is always on - no gating flag.  The shared_mapper node
 subscribes to /{prefix}/scan separately and processes those scans the
 whole time the drone is in the air.
 
@@ -66,7 +66,7 @@ wall digit is seen repeatedly during a 360 deg spin.
 
 Battery voltage (requirement 4)
 -------------------------------
-Battery is handled exactly like frontier-exploration drones — the
+Battery is handled exactly like frontier-exploration drones - the
 cflib backend publishes /{prefix}/status (crazyflie_interfaces/Status,
 configured in crazyflies.yaml with firmware_logging.default_topics.status).
 The standalone battery_monitor node subscribes to /{prefix}/status for
@@ -178,7 +178,7 @@ class ObjectDetectionScanner(Node):
         self.last_replan_pos  = None
         self.navigating_home  = False
 
-        # Home location (requirement 3) — captured at end of TAKEOFF
+        # Home location (requirement 3) - captured at end of TAKEOFF
         self.start_pos  = None
         self.start_time = None
 
@@ -229,7 +229,7 @@ class ObjectDetectionScanner(Node):
         self.create_subscription(
             OccupancyGrid, '/map', self._map_cb, map_qos)
 
-        # Goal from planner — NOTE different topic name from explorer_drone
+        # Goal from planner - NOTE different topic name from explorer_drone
         self.create_subscription(
             Point, robot_prefix + '/assigned_scan_point', self._goal_cb, 10)
 
@@ -238,7 +238,7 @@ class ObjectDetectionScanner(Node):
         # /{prefix}/assigned_goal (the frontier-exploration topic) for both
         # the Recall and Land buttons on the mission-control dashboard.
         # Scanner drones subscribe here too so those same buttons work for
-        # them.  Only NaN messages are forwarded — real-valued goals on this
+        # them.  Only NaN messages are forwarded - real-valued goals on this
         # topic are silently ignored, since those are meant for a frontier
         # explorer, not a scanner.
         self.create_subscription(
@@ -251,7 +251,7 @@ class ObjectDetectionScanner(Node):
         # threshold.  We stash the latest one and the scan callback decides
         # whether and where to plant it as a marker on the shared map.
         self.create_subscription(
-            Int32, robot_prefix + '/aideck/digit_prediction',
+            Int32, '/aideck/digit_prediction',
             self._digit_prediction_cb, 10)
 
         self.cmd_pub          = self.create_publisher(
@@ -330,9 +330,9 @@ class ObjectDetectionScanner(Node):
     def _goal_cb(self, msg: Point):
         """
         Three cases (identical protocol to explorer_drone):
-          x=NaN, z=0.0 — RECALL: return home then land
-          x=NaN, z=1.0 — LAND:   immediate descent
-          x=real       — normal scan-point assignment
+          x=NaN, z=0.0 - RECALL: return home then land
+          x=NaN, z=1.0 - LAND:   immediate descent
+          x=real       - normal scan-point assignment
         """
         # ── Recall or land-in-place ───────────────────────────────────────────
         if math.isnan(msg.x):
@@ -361,7 +361,7 @@ class ObjectDetectionScanner(Node):
         # ── Normal scan-point assignment ──────────────────────────────────────
         new_goal = (msg.x, msg.y)
         if self.goal == new_goal:
-            return  # echoed back — ignore
+            return  # echoed back - ignore
         now = self.get_clock().now().nanoseconds * 1e-9
         self.get_logger().info(
             f'New scan point assigned: ({new_goal[0]:.2f},{new_goal[1]:.2f})')
@@ -387,7 +387,7 @@ class ObjectDetectionScanner(Node):
                     f'Path planned: {len(self.waypoints)} waypoints.')
             else:
                 self.get_logger().warn(
-                    'A* failed for assigned scan point — reporting FAILED.')
+                    'A* failed for assigned scan point - reporting FAILED.')
                 self._report_status('FAILED')
                 self.goal  = None
                 self.state = State.WAIT_GOAL
@@ -404,14 +404,14 @@ class ObjectDetectionScanner(Node):
         _goal_cb handler, which already knows how to process NaN
         messages (x=NaN, z=0.0 = recall; x=NaN, z=1.0 = land in place).
 
-        Real-valued goals on this topic are silently ignored — those are
+        Real-valued goals on this topic are silently ignored - those are
         intended for frontier explorers, not scanner drones.
         """
         if math.isnan(msg.x):
             self._goal_cb(msg)
 
     def _stop_cb(self, request, response):
-        self.get_logger().info('Stop requested — landing.')
+        self.get_logger().info('Stop requested - landing.')
         self.timer.cancel()
         self._publish_vel(z=-0.2)
         response.success = True
@@ -444,7 +444,7 @@ class ObjectDetectionScanner(Node):
                     f'Takeoff complete. '
                     f'Home: ({self.start_pos[0]:.3f},{self.start_pos[1]:.3f})')
                 self.scanning_start_time = now
-                # No seed spin — scanner drones assume a pre-built map.
+                # No seed spin - scanner drones assume a pre-built map.
                 self.state = State.WAIT_GOAL
 
         # ── WAIT_GOAL ─────────────────────────────────────────────────────────
@@ -455,7 +455,7 @@ class ObjectDetectionScanner(Node):
                 if self.waypoints:
                     self.state = State.NAVIGATE
                 else:
-                    self.get_logger().warn('A* failed — reporting FAILED.')
+                    self.get_logger().warn('A* failed - reporting FAILED.')
                     self._report_status('FAILED')
                     self.goal = None
 
@@ -465,24 +465,24 @@ class ObjectDetectionScanner(Node):
                 self.state = State.WAIT_GOAL
                 return
 
-            # Layer 1 — stuck detection
+            # Layer 1 - stuck detection
             if self._is_stuck(now):
                 self.stuck_events_for_goal += 1
                 self.get_logger().warn(
                     f'Stuck {self.stuck_events_for_goal}/{MAX_STUCK_EVENTS_PER_GOAL}')
                 if self.stuck_events_for_goal >= MAX_STUCK_EVENTS_PER_GOAL:
-                    self.get_logger().warn('Too many stuck events — FAILED.')
+                    self.get_logger().warn('Too many stuck events - FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
                 self._execute_replan(now)
                 return
 
-            # Layer 2 — replan flag
+            # Layer 2 - replan flag
             if self.needs_replan:
                 self.replan_count_for_goal += 1
                 if self.replan_count_for_goal > MAX_REPLANS_PER_GOAL:
-                    self.get_logger().warn('Too many replans — FAILED.')
+                    self.get_logger().warn('Too many replans - FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -490,7 +490,7 @@ class ObjectDetectionScanner(Node):
                 if (self.last_replan_pos is not None and
                         abs(cg[0]-self.last_replan_pos[0]) <= 1 and
                         abs(cg[1]-self.last_replan_pos[1]) <= 1):
-                    self.get_logger().warn('Replanned but no movement — FAILED.')
+                    self.get_logger().warn('Replanned but no movement - FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -498,7 +498,7 @@ class ObjectDetectionScanner(Node):
                 self._execute_replan(now)
                 return
 
-            # Layer 3 — safety replan
+            # Layer 3 - safety replan
             front = self._front_range()
             if (0.0 < front < OBSTACLE_DIST and
                     not self.needs_replan and
@@ -506,7 +506,7 @@ class ObjectDetectionScanner(Node):
                 self._execute_replan(now)
                 return
 
-            # Layer 4 — waypoint following
+            # Layer 4 - waypoint following
             if not self.waypoints and self.current_wp is None:
                 self._on_arrival()
                 return
@@ -527,7 +527,7 @@ class ObjectDetectionScanner(Node):
                 self.get_logger().info(
                     f'360 spin complete at '
                     f'({self.position[0]:.2f},{self.position[1]:.2f}).')
-                # Now — and only now — report REACHED so the planner marks
+                # Now - and only now - report REACHED so the planner marks
                 # the disc as scanned.
                 self._report_status('REACHED')
                 self._clear_goal()
@@ -574,14 +574,14 @@ class ObjectDetectionScanner(Node):
     # ══════════════════════════════════════════════════════════════════════════
 
     def _on_arrival(self):
-        """Called when waypoints are exhausted — drone has reached its goal."""
+        """Called when waypoints are exhausted - drone has reached its goal."""
         if self.navigating_home:
             # Arrived home (recall flow); drop into LANDING from the state machine.
             self.navigating_home = False
             self.state = State.LANDING
             return
 
-        # Arrived at a scan point — perform the full 360 spin.
+        # Arrived at a scan point - perform the full 360 spin.
         self.get_logger().info(
             f'Arrived at scan point '
             f'({self.goal[0]:.2f},{self.goal[1]:.2f}). Starting 360 spin.')
@@ -599,7 +599,7 @@ class ObjectDetectionScanner(Node):
         self.last_replan_time = now
         self._plan_path_to_goal()
         if not self.waypoints:
-            self.get_logger().warn('Replan failed — reporting FAILED.')
+            self.get_logger().warn('Replan failed - reporting FAILED.')
             self._report_status('FAILED')
             self._clear_goal()
 
@@ -660,7 +660,7 @@ class ObjectDetectionScanner(Node):
             if self.waypoints:
                 speed = CRUISE_SPEED / max(dist, 1e-3)
             else:
-                # Ramp down into the scan point — no standoff trimming here,
+                # Ramp down into the scan point - no standoff trimming here,
                 # arrive exactly at the centre.
                 speed = min(CRUISE_SPEED, dist) / max(dist, 1e-3)
 
@@ -717,7 +717,7 @@ class ObjectDetectionScanner(Node):
         return vy
 
     # ══════════════════════════════════════════════════════════════════════════
-    # A* path planning — unknown=free since the map is pre-built
+    # A* path planning - unknown=free since the map is pre-built
     # ══════════════════════════════════════════════════════════════════════════
 
     def _world_to_grid(self, wx, wy):
@@ -730,7 +730,7 @@ class ObjectDetectionScanner(Node):
 
     def _build_inflated_map(self, inflation):
         """
-        Unknown cells (-1) are treated as FREE here — scanner drones run
+        Unknown cells (-1) are treated as FREE here - scanner drones run
         on a pre-built map where unknowns are navigable passageway, not
         hidden walls.  Only cells explicitly marked 100 are blocked.
         This mirrors the original coverage_scanner; it differs from the
@@ -839,7 +839,7 @@ class ObjectDetectionScanner(Node):
         path.append((sr, sc))
         path.reverse()
 
-        # No STANDOFF trimming — scanner drones must arrive exactly at
+        # No STANDOFF trimming - scanner drones must arrive exactly at
         # the centre of the scan disc.
         wps = [self._grid_to_world(r, c)
                for i, (r, c) in enumerate(path)
@@ -888,7 +888,7 @@ class ObjectDetectionScanner(Node):
     #     and the ranger readings are usable.
     #   - The front ranger must report a valid hit within DIGIT_RANGE_MAX.
     #     If there's no wall in front (ranger reports 0.0, inf, or a value
-    #     beyond the useful range) the prediction is dropped — better to
+    #     beyond the useful range) the prediction is dropped - better to
     #     miss a digit than to plant a marker at an arbitrary location.
     #
     # Dedup:
@@ -901,14 +901,14 @@ class ObjectDetectionScanner(Node):
         if self.pending_digit is None:
             return
 
-        # State gate — skip TAKEOFF/LANDING only.
+        # State gate - skip TAKEOFF/LANDING only.
         if self.state in (State.TAKEOFF, State.LANDING):
             return
 
         # Front ranger must be a valid, useful-range hit.
         front = self._front_range()
         if front <= 0.0 or front >= DIGIT_RANGE_MAX:
-            # No wall in front within useful range — can't place this digit.
+            # No wall in front within useful range - can't place this digit.
             # Leave pending_digit set; the next scan callback may find a wall.
             return
 
@@ -921,11 +921,11 @@ class ObjectDetectionScanner(Node):
         # Dedup against previously-placed markers.
         for (px, py) in self.placed_digit_positions:
             if math.hypot(wx - px, wy - py) < DIGIT_DEDUP_DIST:
-                # Too close to an existing marker — drop this prediction.
+                # Too close to an existing marker - drop this prediction.
                 self.pending_digit = None
                 return
 
-        # Fresh location — plant a new marker.
+        # Fresh location - plant a new marker.
         self._add_digit_marker(wx, wy, self.pending_digit)
         self.placed_digit_positions.append((wx, wy))
         self.get_logger().info(

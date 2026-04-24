@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
-battery_monitor.py
-
-The single ROS 2 node that bridges the mission control server and the drones.
+The common ROS 2 node that bridges the mission control server and the drones.
 Handles two responsibilities:
 
   1. Battery monitoring
@@ -47,8 +45,8 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Point
 
 
-VOLTAGE_WARNING  = 3.8  # V — matches crazyflies.yaml default
-VOLTAGE_CRITICAL = 3.7  # V — matches crazyflies.yaml default
+VOLTAGE_WARNING  = 3.8  
+VOLTAGE_CRITICAL = 3.7  
 
 
 def voltage_state(voltage: float) -> str:

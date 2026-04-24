@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Drone Navigator — works with GoalAssigner
+Drone Navigator - works with GoalAssigner
 ==========================================
 State machine:
-  TAKEOFF      — take off and hover
-  SPINNING     — initial 100° scan to seed the map
-  WAIT_GOAL    — hover and wait for /cfX/assigned_goal from GoalAssigner
-  NAVIGATE     — follow A* waypoints to the assigned goal
-  DONE         — return to start via A* and land
-  LANDING      — descend
+  TAKEOFF      - take off and hover
+  SPINNING     - initial 100° scan to seed the map
+  WAIT_GOAL    - hover and wait for /cfX/assigned_goal from GoalAssigner
+  NAVIGATE     - follow A* waypoints to the assigned goal
+  DONE         - return to start via A* and land
+  LANDING      - descend
 
 Key changes from the monolithic version:
   - No frontier detection, scoring, or peer gradient logic.
@@ -66,7 +66,7 @@ MAX_LATERAL_SPEED   = 0.24
 # ── Spin ──────────────────────────────────────────────────────────────────────
 SPIN_RATE = 0.5
 
-# ── Stuck detector — conservative so single replans don't lose the goal ───────
+# ── Stuck detector - conservative so single replans don't lose the goal ───────
 STUCK_PROGRESS_DIST       = 0.10
 STUCK_TIMEOUT             = 5.0
 MAX_STUCK_EVENTS_PER_GOAL = 3
@@ -203,9 +203,9 @@ class DroneNavigator(Node):
         """Receive a message on /cfX/assigned_goal.
 
         Three cases distinguished by x and z values:
-          x=NaN, z=0.0  — RECALL: return home then land (from assigner or mission control)
-          x=NaN, z=1.0  — LAND:   land in place immediately (from mission control)
-          x=real number — normal frontier goal from assigner
+          x=NaN, z=0.0  - RECALL: return home then land (from assigner or mission control)
+          x=NaN, z=1.0  - LAND:   land in place immediately (from mission control)
+          x=real number - normal frontier goal from assigner
         """
         # ── Recall or land-in-place command ───────────────────────────────────
         if math.isnan(msg.x):
@@ -217,12 +217,12 @@ class DroneNavigator(Node):
             self.needs_replan = False
 
             if msg.z == 1.0:
-                # Land in place — jump straight to LANDING
+                # Land in place - jump straight to LANDING
                 self.get_logger().info(
                     'Land-in-place command received. Descending now.')
                 self.state = State.LANDING
             else:
-                # Recall — navigate home first via DONE state
+                # Recall - navigate home first via DONE state
                 self.get_logger().info(
                     'Recall command received. Returning home.')
                 self.state = State.DONE
@@ -235,7 +235,7 @@ class DroneNavigator(Node):
         # ── Normal frontier goal ──────────────────────────────────────────────
         new_goal = (msg.x, msg.y)
         if self.goal == new_goal:
-            return  # same goal echoed back — ignore
+            return  # same goal echoed back - ignore
         now = self.get_clock().now().nanoseconds * 1e-9
         self.get_logger().info(
             f'New goal assigned: ({new_goal[0]:.2f},{new_goal[1]:.2f})')
@@ -262,13 +262,13 @@ class DroneNavigator(Node):
                     f'Path planned: {len(self.waypoints)} waypoints.')
             else:
                 self.get_logger().warn(
-                    'A* failed for assigned goal — reporting FAILED.')
+                    'A* failed for assigned goal - reporting FAILED.')
                 self._report_status('FAILED')
                 self.goal  = None
                 self.state = State.WAIT_GOAL
 
     def _stop_cb(self, request, response):
-        self.get_logger().info('Stop requested — landing.')
+        self.get_logger().info('Stop requested - landing.')
         self.timer.cancel()
         self._publish_vel(z=-0.2)
         response.success = True
@@ -329,7 +329,7 @@ class DroneNavigator(Node):
                 if self.waypoints:
                     self.state = State.NAVIGATE
                 else:
-                    self.get_logger().warn('A* failed — reporting FAILED, waiting.')
+                    self.get_logger().warn('A* failed - reporting FAILED, waiting.')
                     self._report_status('FAILED')
                     self.goal = None
 
@@ -339,24 +339,24 @@ class DroneNavigator(Node):
                 self.state = State.WAIT_GOAL
                 return
 
-            # Layer 1 — stuck detection
+            # Layer 1 - stuck detection
             if self._is_stuck(now):
                 self.stuck_events_for_goal += 1
                 self.get_logger().warn(
                     f'Stuck event {self.stuck_events_for_goal}/{MAX_STUCK_EVENTS_PER_GOAL}')
                 if self.stuck_events_for_goal >= MAX_STUCK_EVENTS_PER_GOAL:
-                    self.get_logger().warn('Too many stuck events — reporting FAILED.')
+                    self.get_logger().warn('Too many stuck events - reporting FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
                 self._execute_replan(now)
                 return
 
-            # Layer 2 — replan flag
+            # Layer 2 - replan flag
             if self.needs_replan:
                 self.replan_count_for_goal += 1
                 if self.replan_count_for_goal > MAX_REPLANS_PER_GOAL:
-                    self.get_logger().warn('Too many replans — reporting FAILED.')
+                    self.get_logger().warn('Too many replans - reporting FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -364,7 +364,7 @@ class DroneNavigator(Node):
                 if (self.last_replan_pos is not None and
                         abs(cg[0]-self.last_replan_pos[0]) <= 1 and
                         abs(cg[1]-self.last_replan_pos[1]) <= 1):
-                    self.get_logger().warn('Replanned but no movement — reporting FAILED.')
+                    self.get_logger().warn('Replanned but no movement - reporting FAILED.')
                     self._report_status('FAILED')
                     self._clear_goal()
                     return
@@ -372,7 +372,7 @@ class DroneNavigator(Node):
                 self._execute_replan(now)
                 return
 
-            # Layer 3 — safety replan
+            # Layer 3 - safety replan
             front = self._front_range()
             if (0.0 < front < OBSTACLE_DIST and
                     not self.needs_replan and
@@ -380,7 +380,7 @@ class DroneNavigator(Node):
                 self._execute_replan(now)
                 return
 
-            # Layer 4 — waypoint following
+            # Layer 4 - waypoint following
             if not self.waypoints and self.current_wp is None:
                 if self.navigating_home:
                     self.navigating_home = False
@@ -456,7 +456,7 @@ class DroneNavigator(Node):
         self.last_replan_time = now
         self._plan_path_to_goal()
         if not self.waypoints:
-            self.get_logger().warn('Replan failed — reporting FAILED.')
+            self.get_logger().warn('Replan failed - reporting FAILED.')
             self._report_status('FAILED')
             self._clear_goal()
 

@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 
 """
-Autonomous Frontier-Based Explorer for Crazyflie
-=================================================
+Autonomous Frontier-Based Explorer
+
 State machine:
   1. TAKEOFF       - take off and hover
-  2. SPINNING      - 100° scan; used both after takeoff and after each frontier
-                     goal is reached, so every scan is identical
+  2. SPINNING      - 100° scan used both after takeoff and after each frontier is reached
   3. FIND_FRONTIER - score frontiers, pick best goal
   4. NAVIGATE      - follow A* waypoints to goal
   5. DONE          - exploration complete → return to (0,0) via A* → land
   7. LANDING       - descend and stop
-
-Efficiency (v2): [1-10]
-Coverage  (v3): [11-18]
-
 """
 
 import rclpy
@@ -50,28 +45,20 @@ MIN_FRONTIER_DIST      = 0.5
 FRONTIER_STEP          = 1
 REPLAN_COOLDOWN        = 3.5
 WALL_INFLATION_CELLS   = 2      # cells of clearance around known walls
-STANDOFF_WAYPOINTS = 2          # waypoints to trim from the end of the A* path;
-                                 # at WAYPOINT_SPACING=2 cells and MAP_RES=0.1m
-                                 # this gives ~0.4m standoff from the frontier,
-                                 # always on the correct side of any wall
-PROXIMITY_COST_WEIGHT  = 2    # how strongly A* avoids cells near walls;
-                                 # higher = path hugs centre more but may
-                                 # fail in tight corridors; 2-6 is a good range
-PROXIMITY_COST_RADIUS  = 5 #10   # cells — BFS radius for proximity cost map;
-                                 # cells within this radius of a wall/unknown
-                                 # get a proximity penalty in A*;
-                                 # at MAP_RES=0.1m, 10 cells = 1.0m clearance zone
+STANDOFF_WAYPOINTS     = 2          # number of waypoints to trim from the end of the A* path to give standoff                
+PROXIMITY_COST_WEIGHT  = 2    # how strongly A* avoids cells near walls       
+PROXIMITY_COST_RADIUS  = 5       # cells BFS radius for proximity cost map such that cells within this radius get a penalty in A*
 
 # ── Wall avoidance parameters ─────────────────────────────────────────────────
 # ── Frontier filtering ────────────────────────────────────────────────────────
-MIN_CLUSTER_SIZE       = 3   # preferred minimum cluster size; relaxed to MIN_VALID_CLUSTER_SIZE if no clusters pass
+MIN_CLUSTER_SIZE       = 3    # preferred minimum cluster size (will eventualy be reduced to MIN_VALID_CLUSTER_SIZE so kinda redundant)
 MIN_VALID_CLUSTER_SIZE = 3    # absolute floor
 
 # ── Wall safety ───────────────────────────────────────────────────────────────
-# Push the drone away from any wall closer than WALL_PUSH_DIST on all four
-# axes.  WALL_SAFE_DIST is kept as the threshold below which speed is reduced
-# when only one side wall is visible.
-WALL_PUSH_DIST          = 0.10  # inner hard-push radius: must be < OBSTACLE_DIST
+# Push the drone away from any wall closer than WALL_PUSH_DIST.
+# WALL_SAFE_DIST is kept as the threshold below which speed is reduced
+
+WALL_PUSH_DIST          = 0.10  # inner hard-push radius must be < OBSTACLE_DIST
 WALL_SAFE_DIST          = 0.3  #0.3
 WALL_FILTER_ALPHA       = 0.3
 WALL_KP_SAFETY          = 0.3
@@ -88,37 +75,24 @@ RECENT_GOAL_MEMORY  = 8
 DISTANCE_WEIGHT     = 1.6 #1.6
 SIZE_WEIGHT         = 1.5 #1.6
 UNKNOWN_WEIGHT      = 2.0
-VISIT_PENALTY       = 0.0 #0.5
-RECENT_GOAL_PENALTY = 0.0 #10.0
+VISIT_PENALTY       = 0.0 # leave at 0 to disable penalty, tested to perfrom better without it
+RECENT_GOAL_PENALTY = 0.0 # leave at 0 to disable penalty, tested to perfrom better without it
 
 # ── Peer claim coordination ───────────────────────────────────────────────────
-# Gradient-based separation: frontiers far from all peer goals get a bonus,
-# frontiers close to a peer goal get a penalty.  The modifier is a smooth
-# tanh S-curve so there is no hard radius threshold to tune per map.
+# Gradient-based separation: frontiers far from all peer goals get a bonus, frontiers close to a peer goal get a penalty. 
 #
 # Formula per peer:
-#   modifier = PEER_GRADIENT_WEIGHT * tanh(dist / scale - 1.0)
-#
-# where scale is computed dynamically from the current map (see
-# _compute_peer_gradient_scale).  At dist == scale the modifier is zero
-# (neutral).  Below that distance it goes negative (penalty, min ~
-# -PEER_GRADIENT_WEIGHT).  Above that distance it goes positive (bonus,
-# max ~ +PEER_GRADIENT_WEIGHT).
-#
-# PEER_GRADIENT_SCALE  — crossover distance in metres; computed dynamically
-#                        from the explored map via _compute_peer_gradient_scale().
-#                        Formula: sqrt(free_cell_count) * MAP_RES * PEER_GRADIENT_SCALE_FACTOR
-#                        Falls back to PEER_GRADIENT_SCALE_FALLBACK if no map data yet.
-# PEER_GRADIENT_WEIGHT — maximum bonus/penalty magnitude in score units.
-#                        6.0 is roughly equal to SIZE_WEIGHT * 4 cells, enough
-#                        to reliably redirect a drone without hard-blocking it.
-PEER_GRADIENT_SCALE_FACTOR   = 0.6  # tuning knob: scale = effective_side * this
-PEER_GRADIENT_SCALE_FALLBACK = 2.0  # metres — used before map data arrives
+# modifier = PEER_GRADIENT_WEIGHT * tanh(dist / scale - 1.0)
+# PEER_GRADIENT_SCALE is the crossover distance in metres computed dynamically from the explored map via _compute_peer_gradient_scale().                       
+# PEER_GRADIENT_WEIGHT is the maximum bonus/penalty magnitude in score units.
+                        
+PEER_GRADIENT_SCALE_FACTOR   = 0.6  # scale = effective_side * this
+PEER_GRADIENT_SCALE_FALLBACK = 2.0  # used before map data arrives
 PEER_GRADIENT_WEIGHT         = 8.0   # maximum score bonus/penalty magnitude
-PEER_CLAIM_TIMEOUT      = 5.0   # seconds — ignore stale claims (crashed/landed)
+PEER_CLAIM_TIMEOUT      = 5.0   # seconds till ignore stale claims (crashed/landed)
 PEER_CLAIM_PUB_INTERVAL = 0.5   # seconds between goal publications
 
-# ── Goal commitment / hysteresis ─────────────────────────────────────────────
+# ── Goal commitment / (hysteresis) ─────────────────────────────────────────────
 GOAL_KEEP_RATIO       = 0.85
 GOAL_SWITCH_MIN_DELTA = 2.0
 
@@ -128,11 +102,10 @@ STUCK_TIMEOUT             = 5.0
 MAX_STUCK_EVENTS_PER_GOAL = 2
 MAX_REPLANS_PER_GOAL      = 3  # abandon goal after this many replans without reaching next waypoint
 
-# [fix-v8] Reduced from 15 → 7 cells (0.7 m gaps) so the nav loop catches
 # obstacles more frequently between waypoints.
 WAYPOINT_SPACING = 2
 
-# ── Reachability BFS [23][25] ─────────────────────────────────────────────────
+# ── Reachability BFS ─────────────────────────────────────────────────
 REACHABILITY_STRIDE         = 3
 REACHABILITY_CHECK_INTERVAL = 3.0
 
@@ -217,9 +190,9 @@ class FrontierExplorationMultiranger(Node):
         self._claim_id = float(hash(robot_prefix) % 1_000_000)
 
 
-        self.last_reachability_time = 0.0                   # [25]
-        self.zero_cluster_count = 0                         # successive FIND_FRONTIER ticks with 0 clusters
-        self.no_path_failures = 0                           # successive frontiers with no A* path found
+        self.last_reachability_time = 0.0                   
+        self.zero_cluster_count = 0                         
+        self.no_path_failures = 0                           
 
         # ── Goal / stuck tracking ─────────────────────────────────────────────
         self.goal_start_pos        = None
@@ -1309,9 +1282,6 @@ class FrontierExplorationMultiranger(Node):
         sr, sc = self._world_to_grid(self.position[0], self.position[1])
         gr, gc = self._world_to_grid(self.goal[0], self.goal[1])
 
-        # Bug 1 fix: clamp BOTH start and goal to grid bounds.
-        # Previously only goal was clamped — an out-of-bounds start causes
-        # A* to silently fail with "no path found" on every call.
         sr = max(0, min(self.map_height - 1, sr))
         sc = max(0, min(self.map_width  - 1, sc))
         gr = max(0, min(self.map_height - 1, gr))
@@ -1331,19 +1301,13 @@ class FrontierExplorationMultiranger(Node):
             passable = self._build_inflated_map(inflation)
             W, H     = self.map_width, self.map_height
 
-            # Bug 2 fix: force start cell passable, not just goal.
-            # If the drone sits inside an inflation zone A* would expand from
-            # an impassable cell, producing an invalid first path segment.
+
             if 0 <= sr < H and 0 <= sc < W:
                 passable[sr * W + sc] = True
             # Force goal passable so A* can always reach the standoff point.
             if 0 <= gr < H and 0 <= gc < W:
                 passable[gr * W + gc] = True
 
-            # Bug 3+5 fix: rebuild proximity cost per inflation level so the
-            # gradient correctly reflects the passable region at this inflation.
-            # effective_radius shrinks with inflation so the gradient fills the
-            # corridor from the passable boundary inward to the centre.
             effective_radius = max(1, PROXIMITY_COST_RADIUS - inflation)
             prox_cost = self._build_proximity_cost(effective_radius)
 
@@ -1366,8 +1330,6 @@ class FrontierExplorationMultiranger(Node):
                     if ng < g_score.get((nr, nc), float('inf')):
                         g_score[(nr, nc)]   = ng
                         came_from[(nr, nc)] = (row, col)
-                        # Plain Euclidean heuristic — admissible because
-                        # minimum step cost is 1.0 (cardinal, zero proximity)
                         h = math.hypot(nr - gr, nc - gc)
                         heapq.heappush(open_heap, (ng + h, ng, nr, nc))
             if found:
@@ -1379,10 +1341,6 @@ class FrontierExplorationMultiranger(Node):
             self._warn('A*: no path found')
             return
 
-        # Bug 4 fix: include the start cell in the path.
-        # The original trace-back loop stopped at the cell whose predecessor
-        # is the start, leaving (sr, sc) out of the path entirely.  With
-        # WAYPOINT_SPACING=15 this could skip the first section of the path.
         path = []
         cell = (gr, gc)
         while cell in came_from:
@@ -1398,9 +1356,8 @@ class FrontierExplorationMultiranger(Node):
         # Trim the last STANDOFF_WAYPOINTS waypoints so the drone stops
         # short of the frontier boundary. This replaces the old straight-line
         # walkback (_safe_nav_goal) which crossed walls in some cases.
-        # At WAYPOINT_SPACING=2 and MAP_RES=0.1m, trimming 2 waypoints gives
-        # ~0.4m standoff, always on the correct side of any wall.
-        # Skip the trim when returning home — we want exact coordinates.
+        # At WAYPOINT_SPACING=2 and MAP_RES=0.1m, trimming 2 waypoints gives ~0.4m standoff on correct side of the wall
+        
         if not self.navigating_home and len(wps) > STANDOFF_WAYPOINTS + 1:
             wps = wps[:-STANDOFF_WAYPOINTS]
 

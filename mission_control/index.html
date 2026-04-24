@@ -194,7 +194,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 }
 #status-header-label{font-size:11px;font-weight:500;color:var(--muted)}
 
-/* land all button */
+/* land all / recall all buttons */
+#header-actions{display:flex;gap:8px}
 #land-all-btn{
   padding:6px 18px;font-size:12px;font-weight:500;
   cursor:pointer;border:1px solid rgba(176,90,80,0.4);border-radius:6px;
@@ -202,6 +203,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
   transition:all 0.2s;
 }
 #land-all-btn:hover{background:rgba(176,90,80,0.2);border-color:var(--danger)}
+#recall-all-btn{
+  padding:6px 18px;font-size:12px;font-weight:500;
+  cursor:pointer;border:1px solid rgba(136,136,176,0.4);border-radius:6px;
+  background:var(--blue-dim);color:var(--blue);font-family:'Inter',sans-serif;
+  transition:all 0.2s;
+}
+#recall-all-btn:hover{background:rgba(136,136,176,0.2);border-color:var(--blue)}
 
 /* drone grid */
 #drone-cards-area{
@@ -377,7 +385,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
       <div id="monitor-left">
         <div id="status-header">
           <span id="status-header-label">Drone Status</span>
-          <button id="land-all-btn">Land All</button>
+          <div id="header-actions">
+            <button id="recall-all-btn">Recall All</button>
+            <button id="land-all-btn">Land All</button>
+          </div>
         </div>
         <div id="drone-cards-area">
           <div id="drone-cards" style="display:contents">
@@ -839,6 +850,14 @@ document.getElementById('land-all-btn').addEventListener('click', () => {
   if (!prefixes.length) return
   ensureLandWs(() => {
     landWs.send(JSON.stringify({ type: 'land_all', prefixes }))
+  })
+})
+
+document.getElementById('recall-all-btn').addEventListener('click', () => {
+  const prefixes = Object.keys(droneData)
+  if (!prefixes.length) return
+  ensureLandWs(() => {
+    landWs.send(JSON.stringify({ type: 'recall_all', prefixes }))
   })
 })
 
